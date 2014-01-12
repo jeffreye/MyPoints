@@ -1,0 +1,13 @@
+## Interface: 50400
+## Title: MyPoints
+## Title-zhCN: DKP记录仪
+## Notes: dkp addons
+## Version: 0.1 alpha
+## Author: Jeffreye
+## Dependencies: MiDKP
+## SavedVariables: DKP_Options
+
+Core.lua
+RaidRecord.lua
+UI.lua
+MyPoints.xml

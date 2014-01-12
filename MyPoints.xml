@@ -1,0 +1,56 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\FrameXML\UI.xsd">
+   <Script file="UI.lua" />
+   <Frame name="MyFrame" parent="UIParent" toplevel="true" enableMouse="true">
+     <Size>
+       <AbsDimension x="600" y="400" />
+     </Size>
+     <Anchors>
+       <Anchor point="CENTER" />
+     </Anchors>
+
+     <Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background"
+           edgeFile="Interface\DialogFrame\UI-DialogBox-Border" tile="true">
+       <BackgroundInsets>
+         <AbsInset left="11" right="12" top="12" bottom="11"/>
+       </BackgroundInsets>
+       <TileSize>
+         <AbsValue val="32"/>
+       </TileSize>
+       <EdgeSize>
+         <AbsValue val="32"/>
+       </EdgeSize>
+     </Backdrop>
+
+    <Layers>
+      <Layer level="ARTWORK">
+
+        <Texture name="$parentHeaderTexture" file="Interface\DialogFrame\UI-DialogBox-Header">
+          <Size>
+            <AbsDimension x="256" y="64"/>
+          </Size>
+          <Anchors>
+            <Anchor point="TOP">
+              <Offset>
+                <AbsDimension x="0" y="12"/>
+              </Offset>
+            </Anchor>
+          </Anchors>
+        </Texture>
+
+        <FontString name="$parentHeaderText" inherits="GameFontNormal" text="My Points">
+          <Anchors>
+            <Anchor point="TOP" relativeTo="$parentHeaderTexture">
+              <Offset>
+                <AbsDimension x="0" y="-14"/>
+              </Offset>
+            </Anchor>
+          </Anchors>
+        </FontString>
+
+      </Layer>
+    </Layers>
+
+
+   </Frame>
+ </Ui>
