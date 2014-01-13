@@ -32,6 +32,7 @@ function GetPlayersByClass( calss )
 	for n,v in pairs(self.members) do
 		if v.class == class then
 			result[#result] = n
+		end
 	end
 	return result
 end
@@ -43,6 +44,7 @@ function RaidRecord:Lookup( memberName )
 		return self.calculateOnHistory and player.previous - player.cost or player.previous - player.cost + player.gain*player.factor
 	else
 		-- TODO:look up in the database
+		return MiDKPData["dkp"][1]["members"][memberName]["score"]
 	end
 end
 
@@ -79,6 +81,7 @@ function RaidRecord:Remove( entity )
 		self.loots[entity.id] = nil
 	else
 		-- do what?
+		return
 	end
 
 end

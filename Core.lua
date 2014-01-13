@@ -9,33 +9,33 @@ local last_bid = 0 -- time
 local countdown = -1
 
 local convert_table = {
-	["猎人"] = "猎人"
-	["战士"] = "战士"
-	["萨满"] = "萨满"
-	["武僧"] = "武僧"
-	["盗贼"] = "盗贼"
-	["法师"] = "法师"
-	["德鲁伊"] = "德鲁伊"
-	["死亡骑士"] = "死亡骑士"
-	["圣骑士"] = "圣骑士"
-	["牧师"] = "牧师"
-	["术士"] = "术士"
+	["猎人"] = "猎人",
+	["战士"] = "战士",
+	["萨满"] = "萨满",
+	["武僧"] = "武僧",
+	["盗贼"] = "盗贼",
+	["法师"] = "法师",
+	["德鲁伊"] = "德鲁伊",
+	["死亡骑士"] = "死亡骑士",
+	["圣骑士"] = "圣骑士",
+	["牧师"] = "牧师",
+	["术士"] = "术士",
 
-	["LR"] = "猎人"
-	["ZS"] = "战士"
-	["SM"] = "萨满"
-	["WS"] = "武僧"
-	["DZ"] = "盗贼"
-	["FS"] = "法师"
-	["DLY"] = "德鲁伊"
-	["SWQS"] = "死亡骑士"
-	["QS"] = "圣骑士"
-	["MS"] = "牧师"
-	["SS"] = "术士"
+	["LR"] = "猎人",
+	["ZS"] = "战士",
+	["SM"] = "萨满",
+	["WS"] = "武僧",
+	["DZ"] = "盗贼",
+	["FS"] = "法师",
+	["DLY"] = "德鲁伊",
+	["SWQS"] = "死亡骑士",
+	["QS"] = "圣骑士",
+	["MS"] = "牧师",
+	["SS"] = "术士",
 
 
-	["XD"] = "德鲁伊"
-	["DK"] = "死亡骑士"
+	["XD"] = "德鲁伊",
+	["DK"] = "死亡骑士",
 
 }
 
@@ -43,7 +43,7 @@ function OnEvent( self , event , arg1 , arg2 )
 	if event == "CHAT_MSG_WHISPER" then
 		-- auto invite or lookup the dkp
 		if  (not IsInGroup(LE_PARTY_CATEGORY_HOME) or UnitIsGroupLeader("player")) and string.find(DKP_Options["auto_invite_command"],arg1)~=nil then
-			if GetNumGroupMembers() == 5
+			if GetNumGroupMembers() == 5 then
 				ConvertToRaid()
 			end
 			InviteUnit(arg2)
@@ -139,7 +139,7 @@ function initialize()
 			"邪煞水晶",
 			"泰坦符文石"
 		},
-		["item_level"] = 551
+		["item_level"] = 551,
 		["item_quality"] = 3,
 		["item_auction_timelimit"] = -1,
 		["item_auction_countdown_after_slience"] = 10 , -- count down after 10-second-silence
