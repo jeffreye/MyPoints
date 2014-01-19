@@ -7,7 +7,7 @@
 ## Dependencies: MiDKP
 ## SavedVariables: DKP_Options
 
+MyPoints.xml
+UI.lua
 Core.lua
 RaidRecord.lua
-UI.lua
-MyPoints.xml

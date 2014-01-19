@@ -1,52 +1,291 @@
 <Ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd" xmlns="http://www.blizzard.com/wow/ui/">
 	<Script file="UI.lua" />
-    <Button name="GroupButtonTemplate" motionScriptsWhileDisabled="true" virtual="true">
-        <Size x="203" y="60"/>
+  <Script file="Core.lua" />
+
+  <Button name="GroupButtonTemplate" motionScriptsWhileDisabled="true" virtual="true">
+    <Size x="203" y="60"/>
+    <Layers>
+      <Layer level="BACKGROUND">
+        <Texture file="Interface\Common\bluemenu-main" parentKey="bg">
+          <Size x="224" y="80"/>
+          <Anchors>
+            <Anchor point="CENTER" x="0" y="0" />
+          </Anchors>
+          <TexCoords left="0.00390625" right="0.87890625" top="0.75195313" bottom="0.83007813"/>
+        </Texture>
+      </Layer>
+      <Layer level="ARTWORK" textureSubLevel="2">
+        <Texture name="$parentRing" file="Interface\TalentFrame\talent-main" parentKey="ring">
+          <Size x="100" y="100"/>
+          <Anchors>
+            <Anchor point="LEFT" x="-14" y="-1" />
+          </Anchors>
+          <TexCoords left="0.50000000" right="0.91796875" top="0.00195313" bottom="0.21093750"/>
+        </Texture>
+      </Layer>
+      <Layer level="ARTWORK">
+        <Texture name="$parentIcon" parentKey="icon">
+          <Size x="66" y="66"/>
+          <Anchors>
+            <Anchor point="CENTER" relativeTo="$parentRing" x="0" y="0" />
+          </Anchors>
+        </Texture>
+        <FontString name="$parentName" inherits="GameFontNormalLarge" parentKey="name" spacing="2" justifyH="LEFT">
+          <Size x="106" y="0"/>
+          <Anchors>
+            <Anchor point="LEFT" relativeTo="$parentRing" relativePoint="RIGHT" x="-3" y="0" />
+          </Anchors>
+        </FontString>
+      </Layer>
+    </Layers>
+    <Scripts>
+      <OnClick function="MyPointsFrameGroupButton_OnClick"/>
+    </Scripts>
+    <HighlightTexture file="Interface\Common\bluemenu-main" alphaMode="ADD" alpha="0.8">
+      <Size x="224" y="80"/>
+      <Anchors>
+        <Anchor point="CENTER" x="0" y="0" />
+      </Anchors>
+      <TexCoords left="0.00390625" right="0.87890625" top="0.75195313" bottom="0.83007813"/>
+    </HighlightTexture>
+  </Button>
+
+
+     <Button name="RaidRosterButtonTemplate" virtual="true">
+        <Size>
+            <AbsDimension x="299" y="20"/>
+        </Size>
         <Layers>
             <Layer level="BACKGROUND">
-                <Texture file="Interface\Common\bluemenu-main" parentKey="bg">
-                    <Size x="224" y="80"/>
-                    <TexCoords left="0.00390625" right="0.87890625" top="0.75195313" bottom="0.83007813"/>
-                    <Anchors>
-                        <Anchor point="CENTER"/>
-                    </Anchors>
+                <Texture name="$parentStripe" setAllPoints="true" file="Interface\GuildFrame\GuildFrame" parentKey="stripe">
+                    <TexCoords left="0.36230469" right="0.38183594" top="0.95898438" bottom="0.99804688"/>
                 </Texture>
             </Layer>
-            <Layer level="ARTWORK" textureSubLevel="2">
-                <Texture name="$parentRing" file="Interface\TalentFrame\talent-main" parentKey="ring">
-                    <Size x="100" y="100"/>
+            <Layer level="BORDER">
+                <Texture name="$parentBarTexture" hidden="true" file="Interface\TargetingFrame\UI-StatusBar" parentKey="barTexture">
+                    <Size>
+                        <AbsDimension x="10" y="20"/>
+                    </Size>
                     <Anchors>
-                        <Anchor point="LEFT" x="-14" y="-1" />
+                        <Anchor point="LEFT" x="60" y="0"/>
                     </Anchors>
-                    <TexCoords left="0.50000000" right="0.91796875" top="0.00195313" bottom="0.21093750"/>
+                    <Color r="0" g="1" b="0" a="0.1"/>
                 </Texture>
             </Layer>
             <Layer level="ARTWORK">
-                <Texture name="$parentIcon" parentKey="icon">
-                    <Size x="66" y="66"/>
+                <FontString name="$parentString1" inherits="GameFontHighlightSmall" wordwrap="false" hidden="true" parentKey="string1">
+                    <Size>
+                        <AbsDimension x="10" y="10"/>
+                    </Size>
                     <Anchors>
-                        <Anchor point="CENTER" relativeTo="$parentRing" x="0" y="0" />
+                        <Anchor point="LEFT" x="0" y="0"/>
                     </Anchors>
-                </Texture>
-                <FontString name="$parentName" inherits="GameFontNormalLarge" parentKey="name" spacing="2" justifyH="LEFT">
-                    <Size x="106" y="0"/>
+                </FontString>
+                <FontString name="$parentString2" inherits="GameFontHighlightSmall" wordwrap="false" hidden="true" parentKey="string2">
+                    <Size>
+                        <AbsDimension x="10" y="10"/>
+                    </Size>
                     <Anchors>
-                        <Anchor point="LEFT" relativeTo="$parentRing" relativePoint="RIGHT" x="-3" y="0" />
+                        <Anchor point="LEFT" x="0" y="0"/>
+                    </Anchors>
+                </FontString>
+                <FontString name="$parentString3" inherits="GameFontHighlightSmall" wordwrap="false" hidden="true" parentKey="string3">
+                    <Size>
+                        <AbsDimension x="10" y="10"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="LEFT" x="0" y="0"/>
+                    </Anchors>
+                </FontString>
+                <FontString name="$parentString4" inherits="GameFontHighlightSmall" wordwrap="false" hidden="true" parentKey="string4">
+                    <Size>
+                        <AbsDimension x="10" y="10"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="LEFT" x="0" y="0"/>
                     </Anchors>
                 </FontString>
             </Layer>
         </Layers>
-        <HighlightTexture file="Interface\Common\bluemenu-main" alphaMode="ADD" alpha="0.8">
-            <Size x="224" y="80"/>
-            <TexCoords left="0.00390625" right="0.87890625" top="0.75195313" bottom="0.83007813"/>
+        <Scripts>
+            <OnLoad>
+                self:RegisterForClicks("LeftButtonUp", "RightButtonUp");
+            </OnLoad>
+            <OnClick function="RaidRosterButton_OnClick"/>
+        </Scripts>
+        <HighlightTexture file="Interface\FriendsFrame\UI-FriendsFrame-HighlightBar" alphaMode="ADD" setAllPoints="true"/>
+    </Button>
+
+    <Button name="RaidRosterColumnButtonTemplate" virtual="true">
+        <Size>
+            <AbsDimension x="10" y="24"/>
+        </Size>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture name="$parentLeft" file="Interface\FriendsFrame\WhoFrame-ColumnTabs">
+                    <Size>
+                        <AbsDimension x="5" y="24"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT"/>
+                    </Anchors>
+                    <TexCoords left="0" right="0.078125" top="0" bottom="0.75"/>
+                </Texture>
+                <Texture name="$parentMiddle" file="Interface\FriendsFrame\WhoFrame-ColumnTabs">
+                    <Size>
+                        <AbsDimension x="53" y="24"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="LEFT" relativeTo="$parentLeft" relativePoint="RIGHT"/>
+                    </Anchors>
+                    <TexCoords left="0.078125" right="0.90625" top="0" bottom="0.75"/>
+                </Texture>
+                <Texture name="$parentRight" file="Interface\FriendsFrame\WhoFrame-ColumnTabs">
+                    <Size>
+                        <AbsDimension x="4" y="24"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="LEFT" relativeTo="$parentMiddle" relativePoint="RIGHT"/>
+                    </Anchors>
+                    <TexCoords left="0.90625" right="0.96875" top="0" bottom="0.75"/>
+                </Texture>
+            </Layer>
+        </Layers>
+        <Scripts>
+            <OnClick function="SortByColumn"/>
+        </Scripts>
+        <ButtonText>
             <Anchors>
-                <Anchor point="CENTER"/>
+                <Anchor point="LEFT">
+                    <Offset>
+                        <AbsDimension x="8" y="0"/>
+                    </Offset>
+                </Anchor>
+            </Anchors>
+        </ButtonText>
+        <NormalFont style="GameFontHighlightSmall"/>
+        <HighlightTexture name="$parentHighlightTexture" file="Interface\PaperDollInfoFrame\UI-Character-Tab-Highlight" alphaMode="ADD">
+            <Anchors>
+                <Anchor point="TOPLEFT" relativeTo="$parentLeft">
+                    <Offset>
+                        <AbsDimension x="-2" y="5"/>
+                    </Offset>
+                </Anchor>
+                <Anchor point="BOTTOMRIGHT" relativeTo="$parentRight">
+                    <Offset>
+                        <AbsDimension x="2" y="-7"/>
+                    </Offset>
+                </Anchor>
             </Anchors>
         </HighlightTexture>
-        <Scripts>
-            <OnClick function="MyPointsFrameGroupButton_OnClick"/>
-        </Scripts>
     </Button>
+
+
+
+    <Frame name="TableFrameTemplate" virtual="true" >
+      <Size x="338" y="428"/>
+      <Anchors>
+          <Anchor point="TOPLEFT" x="224" y="0"/>
+      </Anchors>
+      
+      <Frames>
+        <Button name="$parentRaidRosterColumnButton1" parentKey="RaidRosterColumnButton1" inherits="RaidRosterColumnButtonTemplate">
+            <Anchors>
+                <Anchor point="TOPLEFT">
+                    <Offset>
+                        <AbsDimension x="4" y="-34"/>
+                    </Offset>
+                </Anchor>
+            </Anchors>
+        </Button>
+        <Button name="$parentRaidRosterColumnButton2" parentKey="RaidRosterColumnButton2" inherits="RaidRosterColumnButtonTemplate">
+            <Anchors>
+                <Anchor point="LEFT" relativeTo="$parentRaidRosterColumnButton1" relativePoint="RIGHT">
+                    <Offset>
+                        <AbsDimension x="-2" y="0"/>
+                    </Offset>
+                </Anchor>
+            </Anchors>
+        </Button>
+        <Button name="$parentRaidRosterColumnButton3" parentKey="RaidRosterColumnButton3" inherits="RaidRosterColumnButtonTemplate">
+            <Anchors>
+                <Anchor point="LEFT" relativeTo="$parentRaidRosterColumnButton2" relativePoint="RIGHT">
+                    <Offset>
+                        <AbsDimension x="-2" y="0"/>
+                    </Offset>
+                </Anchor>
+            </Anchors>
+        </Button>
+        <Button name="$parentRaidRosterColumnButton4" parentKey="RaidRosterColumnButton4" inherits="RaidRosterColumnButtonTemplate">
+            <Anchors>
+                <Anchor point="LEFT" relativeTo="$parentRaidRosterColumnButton3" relativePoint="RIGHT">
+                    <Offset>
+                        <AbsDimension x="-2" y="0"/>
+                    </Offset>
+                </Anchor>
+            </Anchors>
+        </Button>
+
+        <ScrollFrame name="$parentContainer" parentKey="Container" inherits="HybridScrollFrameTemplate">
+            <Size x="308" y="340"/>
+            <Anchors>
+                <Anchor point="TOPLEFT"  x="5" y="-60" />
+            </Anchors>
+            <Frames>
+                <Slider name="$parentScrollBar" inherits="HybridScrollBarTemplate">
+                    <Anchors>
+                        <Anchor point="TOPLEFT" relativePoint="TOPRIGHT">
+                            <Offset>
+                                <AbsDimension x="0" y="-12"/>
+                            </Offset>
+                        </Anchor>
+                        <Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT">
+                            <Offset>
+                                <AbsDimension x="0" y="12"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </Slider>
+            </Frames>
+        </ScrollFrame>
+
+
+        <Frame name="$parentInset" useParentLevel="true" inherits="InsetFrameTemplate">
+            <Size x="217" y="496"/>
+            <Anchors>
+                <Anchor point="TOPLEFT" x="2" y="-56" />
+                <Anchor point="BOTTOMRIGHT" x="-4" y="26" />
+            </Anchors>
+        </Frame>
+
+          <Button name="$parentDelteButton" inherits="MagicButtonTemplate" text="删除">
+              <Size x="135" y="22"/>
+              <Anchors>
+                  <Anchor point="BOTTOM" x="-80" y="4"/>
+              </Anchors>
+              <Scripts>
+                  <OnClick>
+
+                  </OnClick>
+              </Scripts>            
+          </Button>
+
+
+          <Button name="$parentNewButton" inherits="MagicButtonTemplate" text="手动添加">
+              <Size x="135" y="22"/>
+              <Anchors>
+                  <Anchor point="BOTTOM" x="80" y="4" />
+              </Anchors>
+              <Scripts>
+                  <OnClick>
+
+                  </OnClick>
+              </Scripts>
+          </Button>
+
+      </Frames>
+    </Frame>
+
  
     <Frame name="MyPointsFrame" inherits="PortraitFrameTemplate" enableMouse="true" parent="UIParent" hidden="true" toplevel="true">
         <Size x="563" y="428"/>
@@ -146,74 +385,10 @@
                     <Anchor point="BOTTOMLEFT" x="4" y="4" />
                 </Anchors>
             </Frame>
-            <Frame name="TabsFrame" useParentLevel="true" setAllPoints="true">
-                <Frames>
-                    <Button name="$parentGroupButton1" inherits="GroupButtonTemplate" parentKey="groupButton1" id="1">
-                        <Anchors>
-                            <Anchor point="TOPLEFT" x="10" y="-63" />
-                        </Anchors>
-                    </Button>
-                    <Button name="$parentGroupButton2" inherits="GroupButtonTemplate" parentKey="groupButton2" id="2">
-                        <Anchors>
-                            <Anchor point="TOP" relativeTo="$parentGroupButton1" relativePoint="BOTTOM" x="0" y="-6" />
-                        </Anchors>
-                    </Button>
-                    <Button name="$parentGroupButton3" inherits="GroupButtonTemplate" parentKey="groupButton3" id="3">
-                        <Anchors>
-                            <Anchor point="TOP" relativeTo="$parentGroupButton2" relativePoint="BOTTOM" x="0" y="-6" />
-                        </Anchors>
-                    </Button>
-                    <Button name="$parentGroupButton4" inherits="GroupButtonTemplate" parentKey="groupButton4" id="4">
-                        <Anchors>
-                            <Anchor point="TOP" relativeTo="$parentGroupButton3" relativePoint="BOTTOM" x="0" y="-6" />
-                        </Anchors>
-                    </Button>
-                    <Button name="$parentGroupButton5" inherits="GroupButtonTemplate" parentKey="groupButton5" id="5">
-                        <Anchors>
-                            <Anchor point="TOP" relativeTo="$parentGroupButton4" relativePoint="BOTTOM" x="0" y="-6" />
-                        </Anchors>
-                    </Button>
-                </Frames>
-                <Scripts>
-                    <OnLoad function="TabsFrame_OnLoad"/>
-                    <OnShow function="TabsFrame_OnShow"/>
-                </Scripts>
-            </Frame>
-            <!-- raised frame for shadows to be on top of the buttons -->
-            <Frame parentKey="shadows">
-                <Size x="222" y="399"/>
-                <Anchors>
-                    <Anchor point="TOPLEFT" x="4" y="-25" />
-                </Anchors>
-                <Layers>
-                    <Layer level="OVERLAY">
-                        <Texture file="Interface\Common\bluemenu-shadowcovers">       <!-- left line -->
-                            <Size x="84" y="324"/>
-                            <Anchors>
-                                <Anchor point="TOPLEFT" x="4" y="-36" />
-                            </Anchors>
-                            <TexCoords left="0.00781250" right="0.66406250" top="0.00097656" bottom="0.34960938"/>
-                        </Texture>
-                        <Texture file="Interface\Common\bluemenu-shadowcovers">       <!-- right line -->
-                            <Size x="84" y="324"/>
-                            <Anchors>
-                                <Anchor point="TOPLEFT" x="127" y="-36" />
-                            </Anchors>
-                            <TexCoords left="0.00781250" right="0.66406250" top="0.35156250" bottom="0.70019531"/>
-                        </Texture>
-                        <Texture file="Interface\Common\bluemenu-vert" vertTile="true">
-                            <Size x="5" y="403"/>
-                            <Anchors>
-                                <Anchor point="TOPLEFT" x="211" y="3" />
-                            </Anchors>
-                            <TexCoords left="0.00781250" right="0.04687500" top="0" bottom="1"/>
-                        </Texture>
-                    </Layer>
-                </Layers>
-            </Frame>
 
-            <!-- The right frames -->
-                <Frame parentKey="RaidFrame" name="RaidFrame" hidden="false">
+
+
+                <Frame parentKey="OverviewFrame" name="OverviewFrame" hidden="false">
                   <Size x="338" y="428"/>
                   <Anchors>
                       <Anchor point="TOPLEFT" x="224" y="0"/>
@@ -259,14 +434,16 @@
                             </Layer>
                         </Layers>
                         <Scripts>
-                            <OnShow function="RaidSelectionDropDown_SetUp"/>
+                          <OnClick>
+                            
+                          </OnClick>
                         </Scripts>
                     </Frame>
                     
                     <Button name="$parentCreateButton" inherits="UIPanelButtonTemplate" text="创建">
                         <Size x="100" y="22"/>
                         <Anchors>
-                            <Anchor relativeTo="$parentSelectionDropDown" x="-150" y="-2"/>
+                            <Anchor point="BOTTOMLEFT" relativeTo="$parentSelectionDropDown" x="-150" y="-4"/>
                         </Anchors>
                         <Scripts>
                             <OnClick>
@@ -297,11 +474,106 @@
                                       </Anchors>
                                   </Texture>
                               </Layer>
-                          </Layers>
+                                <Layer level="OVERLAY">
+                                    <FontString name="$parentRaidName" parentKey="RaidNameLabel" inherits="GameFontNormalHuge" justifyH="LEFT">
+                                        <Size x="250" y="0"/>
+                                        <Anchors>
+                                            <Anchor point="TOP" x="-10" y="-30"/>
+                                        </Anchors>
+                                    </FontString>
+                                    <FontString name="$parentCreateTime" parentKey="CreateTimeLabel" inherits="GameFontNormalHuge" justifyH="LEFT">
+                                        <Size x="250" y="0"/>
+                                        <Anchors>
+                                            <Anchor relativeTo="$parentRaidName" point="TOP" x="0" y="-30"/>
+                                        </Anchors>
+                                    </FontString>
+                                    <FontString name="$parentEndTime" parentKey="EndTimeLabel" inherits="GameFontNormalHuge" justifyH="LEFT">
+                                        <Size x="250" y="0"/>
+                                        <Anchors>
+                                            <Anchor relativeTo="$parentCreateTime" point="TOP" x="0" y="-30"/>
+                                        </Anchors>
+                                    </FontString>
+
+                                    <FontString name="$parentAutoAnnounce" text="自动工会喊话" inherits="GameFontNormalLarge" justifyH="LEFT">
+                                        <Size x="150" y="0"/>
+                                        <Anchors>
+                                            <Anchor point="BOTTOMLEFT" x="50" y="200"/>
+                                        </Anchors>
+                                    </FontString>
+
+                                    <FontString name="$parentAnnounceContent" text="喊话内容"  inherits="GameFontNormalLarge" justifyH="LEFT">
+                                        <Size x="150" y="0"/>
+                                        <Anchors>
+                                            <Anchor relativeTo="$parentAutoAnnounce" point="BOTTOMLEFT" x="-20" y="-25"/>
+                                        </Anchors>
+                                    </FontString>
+
+                                    <FontString name="$parentAnnounceInterval" text="时间间隔"  inherits="GameFontNormalLarge" justifyH="LEFT">
+                                        <Size x="150" y="0"/>
+                                        <Anchors>
+                                            <Anchor relativeTo="$parentAutoAnnounce" point="BOTTOMLEFT" x="-20" y="-45"/>
+                                        </Anchors>
+                                    </FontString>
+
+
+                                    <FontString name="$parentAnnounceInterval" text="秒"  inherits="GameFontNormalLarge" justifyH="LEFT">
+                                        <Size x="150" y="0"/>
+                                        <Anchors>
+                                            <Anchor relativeTo="$parentAutoAnnounce" point="BOTTOMLEFT" x="100" y="-45"/>
+                                        </Anchors>
+                                    </FontString>
+                                </Layer>
+                              </Layers>
                           <Frames>
-                              
+                                 <CheckButton name="$parentAnnounceCheckBox" parentKey="checkButton">
+                                    <Size x="24" y="24"/>
+                                    <Anchors>
+                                        <Anchor relativeTo="$parentAutoAnnounce" point="BOTTOMLEFT" x="-20" y="-5"/>
+                                    </Anchors>
+                                    <Scripts>
+                                        <OnClick>
+                                            local checked= self:GetChecked() 
+                                            if (checked) then
+                                                PlaySound("igMainMenuOptionCheckBoxOn");
+                                            else
+                                                PlaySound("igMainMenuOptionCheckBoxOff");
+                                            end
+                                            SwitchAutoAnnounce(checked)
+                                        </OnClick>
+                                    </Scripts>
+                                    <NormalTexture file="Interface\Buttons\UI-CheckBox-Up"/>
+                                    <PushedTexture file="Interface\Buttons\UI-CheckBox-Down"/>
+                                    <HighlightTexture file="Interface\Buttons\UI-CheckBox-Highlight" alphaMode="ADD"/>
+                                    <CheckedTexture file="Interface\Buttons\UI-CheckBox-Check"/>
+                                    <DisabledCheckedTexture file="Interface\Buttons\UI-CheckBox-Check-Disabled"/> 
+                                </CheckButton>
+                                <EditBox name="$parentAnnounceBox" inherits="InputBoxTemplate" parentKey="AnnounceBox" letters="40">
+                                    <Size x="210" y="20"/>
+                                    <Anchors>
+                                        <Anchor relativeTo="$parentAutoAnnounce" point="BOTTOMLEFT" x="60" y="-26"/>
+                                    </Anchors>
+                                    <Scripts>
+                                        <OnEnterPressed function="AnnounceBox_OnTextChanged"/>
+                                        <OnTextChanged function="AnnounceBox_OnTextChanged"/>
+                                    </Scripts>
+                                </EditBox>
+
+
+                                <EditBox name="$parentAnnounceIntervalBox" inherits="InputBoxTemplate" parentKey="AnnounceIntervalBox" letters="4">
+                                    <Size x="40" y="20"/>
+                                    <Anchors>
+                                        <Anchor relativeTo="$parentAutoAnnounce" point="BOTTOMLEFT" x="60" y="-46"/>
+                                    </Anchors>
+                                    <Scripts>
+                                        <OnEnterPressed function="AnnounceIntervalBox_OnTextChanged"/>
+                                        <OnTextChanged function="AnnounceIntervalBox_OnTextChanged"/>
+                                    </Scripts>
+                                </EditBox>
 
                           </Frames>
+                          <Scripts>
+                            <OnShow function="RaidInfo_OnShow" />
+                        </Scripts>
                       </Frame>
 
 
@@ -332,184 +604,78 @@
 
                   </Frames>
                     <Scripts>
-                        <OnLoad function="RaidFrame_OnLoad"/>
-                        <OnEvent function="RaidFrame_OnEvent"/>
-                        <OnShow function="RaidFrame_OnShow"/>
+                      <OnClick>
+                        
+                      </OnClick>
                     </Scripts>                
                 </Frame>
                 <!-- RaidFrame -->
 
-                <Frame parentKey="PlayerFrame" name="PlayerFrame" hidden="false" >
-                  <Size x="338" y="428"/>
-                  <Anchors>
-                      <Anchor point="TOPLEFT" x="224" y="0"/>
-                  </Anchors>
-                  
-                  <Frames>
-
-
-                    <Frame name="$parentInset" useParentLevel="true" inherits="InsetFrameTemplate">
-                        <Size x="217" y="496"/>
-                        <Anchors>
-                            <Anchor point="TOPLEFT" x="2" y="-56" />
-                            <Anchor point="BOTTOMRIGHT" x="-4" y="26" />
-                        </Anchors>
-                    </Frame>
-
-                      <Button name="$parentDelteButton" inherits="MagicButtonTemplate" text="删除">
-                          <Size x="135" y="22"/>
-                          <Anchors>
-                              <Anchor point="BOTTOM" x="-80" y="4"/>
-                          </Anchors>
-                          <Scripts>
-                              <OnClick>
-
-                              </OnClick>
-                          </Scripts>
-                      </Button>
-
-
-                      <Button name="$parentNewButton" inherits="MagicButtonTemplate" text="手动添加">
-                          <Size x="135" y="22"/>
-                          <Anchors>
-                              <Anchor point="BOTTOM" x="80" y="4" />
-                          </Anchors>
-                          <Scripts>
-                              <OnClick>
-
-                              </OnClick>
-                          </Scripts>
-                      </Button>
-
-                  </Frames>
-                </Frame>
-                <!-- PlayerFrame -->
-
-                <Frame parentKey="EventFrame" name="EventFrame" hidden="false" >
-                  <Size x="338" y="428"/>
-                  <Anchors>
-                      <Anchor point="TOPLEFT" x="224" y="0"/>
-                  </Anchors>
-                  
-                  <Frames>
-
-                    
-                    <Frame name="$parentInset" useParentLevel="true" inherits="InsetFrameTemplate">
-                        <Size x="217" y="496"/>
-                        <Anchors>
-                            <Anchor point="TOPLEFT" x="2" y="-56" />
-                            <Anchor point="BOTTOMRIGHT" x="-4" y="26" />
-                        </Anchors>
-                    </Frame>
-
-                      <Button name="$parentDelteButton" inherits="MagicButtonTemplate" text="删除">
-                          <Size x="90" y="22"/>
-                          <Anchors>
-                              <Anchor point="BOTTOM" x="-100" y="4"/>
-                          </Anchors>
-                          <Scripts>
-                              <OnClick>
-
-                              </OnClick>
-                          </Scripts>
-                      </Button>
-
-
-                      <Button name="$parentNewButton" inherits="MagicButtonTemplate" text="手动添加">
-                          <Size x="90" y="22"/>
-                          <Anchors>
-                              <Anchor point="BOTTOM" relativeTo="$parentDelteButton" x="30" />
-                          </Anchors>
-                          <Scripts>
-                              <OnClick>
-
-                              </OnClick>
-                          </Scripts>
-                      </Button>
-
-
-                      <Button name="$parentModifyButton" inherits="MagicButtonTemplate" text="修改">
-                          <Size x="90" y="22"/>
-                          <Anchors>
-                              <Anchor point="BOTTOM" relativeTo="$parentNewButton2" x="30" />
-                          </Anchors>
-                          <Scripts>
-                              <OnClick>
-
-                              </OnClick>
-                          </Scripts>
-                      </Button>
-
-                  </Frames>
+                <Frame  name="EventFrame"  inherits="TableFrameTemplate" hidden="true" >
+                    <Scripts>
+                        <OnShow function="SubFrame_OnShow" />
+                    </Scripts>
                 </Frame>
                 <!-- EventFrame -->
 
-                <Frame parentKey="ItemFrame" name="ItemFrame" hidden="false" >
+                <Frame name="MemberFrame" inherits="TableFrameTemplate" hidden="true" >
+                    <Scripts>
+                        <OnShow function="SubFrame_OnShow" />
+                    </Scripts>
+                </Frame>
+                <!-- PlayerFrame -->
+
+                <Frame name="ItemFrame"  inherits="TableFrameTemplate" hidden="true" >
+                    <Scripts>
+                        <OnShow function="SubFrame_OnShow" />
+                    </Scripts>
+                </Frame>
+                <!-- ItemFrame -->
+
+                <Frame name="SettingFrame" hidden="true" >
                   <Size x="338" y="428"/>
                   <Anchors>
                       <Anchor point="TOPLEFT" x="224" y="0"/>
                   </Anchors>
-                  
-                  <Frames>
+                </Frame>
 
-                    
-                    <Frame name="$parentInset" useParentLevel="true" inherits="InsetFrameTemplate">
-                        <Size x="217" y="496"/>
+
+            <Frame name="TabsFrame" useParentLevel="true" setAllPoints="true">
+                <Frames>
+                    <Button name="$parentGroupButton1" inherits="GroupButtonTemplate" parentKey="groupButton1" id="1">
                         <Anchors>
-                            <Anchor point="TOPLEFT" x="2" y="-56" />
-                            <Anchor point="BOTTOMRIGHT" x="-4" y="26" />
+                            <Anchor point="TOPLEFT" x="10" y="-63" />
                         </Anchors>
-                    </Frame>
-
-
-                      <Button name="$parentDelteButton" inherits="MagicButtonTemplate" text="删除">
-                          <Size x="90" y="22"/>
-                          <Anchors>
-                              <Anchor point="BOTTOM" x="-100" y="4"/>
-                          </Anchors>
-                          <Scripts>
-                              <OnClick>
-
-                              </OnClick>
-                          </Scripts>
-                      </Button>
-
-
-                      <Button name="$parentNewButton" inherits="MagicButtonTemplate" text="手动添加">
-                          <Size x="90" y="22"/>
-                          <Anchors>
-                              <Anchor point="BOTTOM" relativeTo="$parentDelteButton" x="30" />
-                          </Anchors>
-                          <Scripts>
-                              <OnClick>
-
-                              </OnClick>
-                          </Scripts>
-                      </Button>
-
-
-                      <Button name="$parentModifyButton" inherits="MagicButtonTemplate" text="修改">
-                          <Size x="90" y="22"/>
-                          <Anchors>
-                              <Anchor point="BOTTOM" relativeTo="$parentNewButton2" x="30" />
-                          </Anchors>
-                          <Scripts>
-                              <OnClick>
-
-                              </OnClick>
-                          </Scripts>
-                      </Button>
-
-                  </Frames>
-                </Frame>
-                <!-- ItemFrame -->
-
-                <Frame parentKey="SettingFrame" name="SettingFrame" hidden="false" >
-                </Frame>
-                <!-- SettingFrame -->
-
-
+                    </Button>
+                    <Button name="$parentGroupButton2" inherits="GroupButtonTemplate" parentKey="groupButton2" id="2">
+                        <Anchors>
+                            <Anchor point="TOP" relativeTo="$parentGroupButton1" relativePoint="BOTTOM" x="0" y="-6" />
+                        </Anchors>
+                    </Button>
+                    <Button name="$parentGroupButton3" inherits="GroupButtonTemplate" parentKey="groupButton3" id="3">
+                        <Anchors>
+                            <Anchor point="TOP" relativeTo="$parentGroupButton2" relativePoint="BOTTOM" x="0" y="-6" />
+                        </Anchors>
+                    </Button>
+                    <Button name="$parentGroupButton4" inherits="GroupButtonTemplate" parentKey="groupButton4" id="4">
+                        <Anchors>
+                            <Anchor point="TOP" relativeTo="$parentGroupButton3" relativePoint="BOTTOM" x="0" y="-6" />
+                        </Anchors>
+                    </Button>
+                    <Button name="$parentGroupButton5" inherits="GroupButtonTemplate" parentKey="groupButton5" id="5">
+                        <Anchors>
+                            <Anchor point="TOP" relativeTo="$parentGroupButton4" relativePoint="BOTTOM" x="0" y="-6" />
+                        </Anchors>
+                    </Button>
+                </Frames>
+                <Scripts>
+                    <OnLoad function="TabsFrame_OnLoad"/>
+                    <OnShow function="TabsFrame_OnShow"/>
+                </Scripts>
+            </Frame>
         </Frames>
-
+      <Scripts>
+        <OnEvent function="OnEvent" />
+      </Scripts>
       </Frame>
 </Ui>

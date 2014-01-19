@@ -40,15 +40,16 @@ local convert_table = {
 }
 
 function OnEvent( self , event , arg1 , arg2 )
+		print(event)
 	if event == "CHAT_MSG_WHISPER" then
 		-- auto invite or lookup the dkp
-		if  (not IsInGroup(LE_PARTY_CATEGORY_HOME) or UnitIsGroupLeader("player")) and string.find(DKP_Options["auto_invite_command"],arg1)~=nil then
+		if  (not IsInGroup(LE_PARTY_CATEGORY_HOME) or UnitIsGroupLeader("player")) and string.find(DKP_Options["auto_invite_command"],arg1) then
 			if GetNumGroupMembers() == 5 then
 				ConvertToRaid()
 			end
 			InviteUnit(arg2)
-		elseif string.match(arg1:upper(),DKP_Options["whisper_command"]:upper()) then
-			SendChatMessage("[dkp]","WHISPER",nil,arg2)
+		elseif arg1:upper()==DKP_Options["whisper_command"]:upper() then
+			SendChatMessage(GetRecordByName(arg2),"WHISPER",nil,arg2)
 		elseif StartsWith(arg1:upper(),DKP_Options["whisper_command"]:upper()) then
 			local class = string.sub(arg1:upper(),string.len(DKP_Options["whisper_command"])+1,string.len(arg1))
 			local players = CurrentRecord:GetPlayersByClass(convert_table[class])
@@ -81,16 +82,16 @@ function OnEvent( self , event , arg1 , arg2 )
 			end
 		end
 	elseif event == "ADDON_LOADED" then
-		if DKP_Options == nil then
+		if not DKP_Options  then
 			initialize()
 		end
 
-		self.RegisterEvent("CHAT_MSG_WHISPER",OnEvent)
+		self:RegisterEvent("CHAT_MSG_WHISPER",OnEvent)
 		-- acquire the options
 		-- or initialize data
 	elseif event == "PLAYER_LOGOUT" then
 		-- save the variable
-		self.UnregisterEvent("CHAT_MSG_WHISPER",OnEvent)
+		self:UnregisterEvent("CHAT_MSG_WHISPER",OnEvent)
 	end
 end
 
@@ -238,7 +239,7 @@ function VerifyBid( message , sender )
 end
 
 function GetRecordByName( name )
-	local player = CurrentRecord:GetDetails(name)
+	local player = CurrentRecord:GetDetails(name) --- wrong way!
 	local NewLine = "\n"
 	local overview = "您当前可用的DKP:" .. CurrentRecord:Lookup(name) .. "分" .. NewLine
 	local last = "进团分数:" .. player.previous .."分，" .. "当前系数为:" .. player.factor
@@ -254,6 +255,7 @@ function GetRecordByName( name )
 		count = count + 1
 	end	
 	local total = "活动结束后,你的分数为:" .. player.previous - player.cost + player.gain * player.factor .."分"
+	return overview .. last .. events ..items .. total
 end
 
 function LootAllItems()
