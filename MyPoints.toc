@@ -8,6 +8,6 @@
 ## SavedVariables: DKP_Options
 
 MyPoints.xml
+RaidRecord.lua
 UI.lua
 Core.lua
-RaidRecord.lua

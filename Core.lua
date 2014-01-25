@@ -49,7 +49,7 @@ function OnEvent( self , event , arg1 , arg2 )
 			end
 			InviteUnit(arg2)
 		elseif arg1:upper()==DKP_Options["whisper_command"]:upper() then
-			SendChatMessage(GetRecordByName(arg2),"WHISPER",nil,arg2)
+			GetRecordByName(arg2)
 		elseif StartsWith(arg1:upper(),DKP_Options["whisper_command"]:upper()) then
 			local class = string.sub(arg1:upper(),string.len(DKP_Options["whisper_command"])+1,string.len(arg1))
 			local players = CurrentRecord:GetPlayersByClass(convert_table[class])
@@ -82,13 +82,12 @@ function OnEvent( self , event , arg1 , arg2 )
 			end
 		end
 	elseif event == "ADDON_LOADED" then
+		-- acquire the options
+		-- or initialize data
 		if not DKP_Options  then
 			initialize()
 		end
-
 		self:RegisterEvent("CHAT_MSG_WHISPER",OnEvent)
-		-- acquire the options
-		-- or initialize data
 	elseif event == "PLAYER_LOGOUT" then
 		-- save the variable
 		self:UnregisterEvent("CHAT_MSG_WHISPER",OnEvent)
@@ -239,23 +238,29 @@ function VerifyBid( message , sender )
 end
 
 function GetRecordByName( name )
-	local player = CurrentRecord:GetDetails(name) --- wrong way!
 	local NewLine = "\n"
-	local overview = "您当前可用的DKP:" .. CurrentRecord:Lookup(name) .. "分" .. NewLine
-	local last = "进团分数:" .. player.previous .."分，" .. "当前系数为:" .. player.factor
-	local events = "本次活动总共获得" .. player.gain .. "分" .. NewLine
+	if not CurrentRecord then 
+		local dkp = Lookup(1,name)
+		SendChatMessage("您当前的DKP:" .. dkp .. "分","WHISPER",nil,name)
+		SendChatMessage("当前系数为" .. GetFactor(dkp),"WHISPER",nil,name)
+		return
+	end
+
+	local player = CurrentRecord:GetDetails(name) --- wrong way!
+	SendChatMessage("您当前可用的DKP:" .. CurrentRecord:Lookup(name) .. "分","WHISPER",nil,name)
+	SendChatMessage("进团分数:" .. player.previous .."分，" .. "当前系数为:" .. player.factor,"WHISPER",nil,name)
+	SendChatMessage("本次活动总共获得" .. player.gain .. "分","WHISPER",nil,name)
 	local count = 1
 	for id,e in pairs(player.events) do
-		events = events .. count .. ":" ..e.name .. "--" .. e.point .."分" .. NewLine
+		SendChatMessage(events .. count .. ":" ..e.name .. "--" .. e.point .."分" ,"WHISPER",nil,name)
 		count = count + 1
 	end
-	local items = "本次活动物品总共花费" ..player.cost .. "分" .. NewLine
+	SendChatMessage("本次活动物品总共花费" ..player.cost .. "分","WHISPER",nil,name)
 	for id,item in pairs(player.loots) do
-		items = items .. count .. ":" ..item.name .. "--" .. item.point .."分" .. NewLine
+		SendChatMessage( count .. ":" ..item.name .. "--" .. item.point .."分","WHISPER",nil,name)
 		count = count + 1
 	end	
-	local total = "活动结束后,你的分数为:" .. player.previous - player.cost + player.gain * player.factor .."分"
-	return overview .. last .. events ..items .. total
+	SendChatMessage("活动结束后,你的分数为:" .. player.previous - player.cost + player.gain * player.factor .."分","WHISPER",nil,name)
 end
 
 function LootAllItems()

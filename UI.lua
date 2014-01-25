@@ -17,7 +17,7 @@ end
 
 local SCROLLFRAME_BUTTON_OFFSET = 2
 local SCROLLFRAME_MAX_COLUMNS = 4
-local groupFrames = {}
+local groupFrames ={ OverviewFrame , MemberFrame , EventFrame , ItemFrame , SettingFrame }
 local TableColumns = {
             ["MemberFrame"] = { "名字" , "职业" , "分数" , "系数" },
             ["EventFrame"]  = { "名称" , "时间" , "分数" },
@@ -35,7 +35,7 @@ local ColumnData = {
             ["时间"] = { width = 100, text = "时间", stringJustify="CENTER" },
 }
 
-local CurrentView = "MemberFrame"
+CurrentView = "MemberFrame"
 
 function TabsFrame_OnLoad( self )
 	SetPortraitToTexture(self.groupButton1.icon, "Interface\\Icons\\INV_Helmet_08")
@@ -57,7 +57,7 @@ end
 
 
 function TabsFrame_OnShow(self)
-    ShowGroupFrame()
+    ShowGroupFrame(OverviewFrame)
 end
 
 
@@ -71,13 +71,13 @@ function ShowGroupFrame(frame)
     for index, groupFrame in ipairs(groupFrames) do
         local button = TabsFrame["groupButton"..index]
         if ( groupFrame == frame ) then
+            groupFrame:Show()
             button.bg:SetTexCoord(0.00390625, 0.87890625, 0.59179688, 0.66992188)
         else
             groupFrame:Hide()
             button.bg:SetTexCoord(0.00390625, 0.87890625, 0.75195313, 0.83007813)
         end
     end
-    frame:Show()
 end
 
 function RaidInfo_OnShow( self )
@@ -102,12 +102,9 @@ function AnnounceIntervalBox_OnTextChanged( self )
     print("announce time" .. self:GetText())
 end
 
-function GetRosterInfo( index )
-    local mem = CurrentRecord.members[index]
-    return mem.name,mem.class,CurrentRecord:Lookup(mem.name),mem.factor
-end
-
 function SubFrame_OnShow( self )
+    CurrentView = self:GetName()
+    print("switch to " .. CurrentView)
     ScrollFrameInit(self)
 end
 
@@ -115,6 +112,7 @@ end
 
 function ScrollFrameInit( view )
     scrollFrame = view["Container"]
+    -- scrollFrame.ScrollBar.doNotHide = true
     HybridScrollFrame_CreateButtons(scrollFrame, "RaidRosterButtonTemplate", 0, 0, "TOPLEFT", "TOPLEFT", 0, -SCROLLFRAME_BUTTON_OFFSET, "TOP", "BOTTOM")
     scrollFrame.update = function ()
         ScrollFrameUpdate(scrollFrame)
@@ -156,19 +154,30 @@ function ScrollFrameInit( view )
                 fontString:Hide()
             end
         end
-
+        btn:Hide()
         btn.barTexture:Hide()
     end
+    scrollFrame.update()
+end
 
+function tablelength(T)
+  local count = 0
+  for _ in pairs(T) do count = count + 1 end
+  return count
 end
 
 function GetInfoCount( view )
+    
+    if not CurrentRecord then
+        CurrentRecord = DefaultRaidRecord()
+    end
+
     if CurrentView == "MemberFrame" then
-        return #CurrentRecord.members
+        return #(CurrentRecord.members)
     elseif CurrentView == "ItemFrame" then
-        return #CurrentRecord.loots
+        return #(CurrentRecord.loots)
     elseif CurrentView == "EventFrame" then
-        return #CurrentRecord.events
+        return #(CurrentRecord.events)
     else
         return 0
     end
@@ -176,13 +185,13 @@ end
 
 function ScrollFrameUpdate( scrollFrame )
     local offset = HybridScrollFrame_GetOffset(scrollFrame)
-    local buttons = scrollFrame
+    local buttons = scrollFrame.buttons
     local count = GetInfoCount(CurrentView)
-
+    print(CurrentView.."items :" .. count)
     for i=1,#buttons do
         local btn = buttons[i]
 
-        if i >= count then
+        if i + offset > count then
             btn:Hide()
         else
             if CurrentView == "MemberFrame" then
@@ -219,4 +228,19 @@ end
 
 function RaidRosterButton_OnClick( self )
     print("click" .. self:GetName())
+end
+
+function GetRosterInfo( index )
+    local mem = CurrentRecord.members[index]
+    return mem.name,mem.class,CurrentRecord:Lookup(mem.name),mem.factor
+end
+
+function GetEventInfo( index )
+    local e = CurrentRecord.events[index]
+    return e.name ,e.time , e.point
+end
+
+function GetLootInfo( index )
+    local l = CurrentRecord.loots[index]
+    return l.name , l.looter ,l.point    
 end

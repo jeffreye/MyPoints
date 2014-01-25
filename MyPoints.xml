@@ -1,6 +1,6 @@
 <Ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd" xmlns="http://www.blizzard.com/wow/ui/">
-	<Script file="UI.lua" />
   <Script file="Core.lua" />
+	<Script file="UI.lua" />
 
   <Button name="GroupButtonTemplate" motionScriptsWhileDisabled="true" virtual="true">
     <Size x="203" y="60"/>
@@ -232,7 +232,7 @@
                 <Anchor point="TOPLEFT"  x="5" y="-60" />
             </Anchors>
             <Frames>
-                <Slider name="$parentScrollBar" inherits="HybridScrollBarTemplate">
+                <Slider name="$parentScrollBar" parentKey="ScrollBar" inherits="HybridScrollBarTemplate">
                     <Anchors>
                         <Anchor point="TOPLEFT" relativePoint="TOPRIGHT">
                             <Offset>
