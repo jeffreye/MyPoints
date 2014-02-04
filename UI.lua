@@ -15,6 +15,23 @@ if MyPointsFrame then
     MyPointsFrame:RegisterEvent("PLAYER_LOGOUT")
 end
 
+
+
+local lang_convert = {
+    ["HUNTER"] = "猎人",
+    ["WARRIOR"] = "战士",
+    ["SHAMAN"] = "萨满",
+    ["MONK"] = "武僧",
+    ["ROGUE"] = "盗贼",
+    ["MAGE"] = "法师",
+    ["DRUID"] = "小德",
+    ["DEATHKNIGHT"] = "死骑",
+    ["PALADIN"] = "圣骑",
+    ["PRIEST"] = "牧师",
+    ["WARLOCK"] = "术士"
+
+}
+
 local SCROLLFRAME_BUTTON_OFFSET = 2
 local SCROLLFRAME_MAX_COLUMNS = 4
 local groupFrames ={ OverviewFrame , MemberFrame , EventFrame , ItemFrame , SettingFrame }
@@ -102,13 +119,47 @@ function AnnounceIntervalBox_OnTextChanged( self )
     print("announce time" .. self:GetText())
 end
 
-function SubFrame_OnShow( self )
-    CurrentView = self:GetName()
-    print("switch to " .. CurrentView)
-    ScrollFrameInit(self)
+function OverviewFrameSelectionDropDown_SetUp(self)
+    UIDropDownMenu_Initialize(self, OverviewFrameSelectionDropDown_Initialize);
+    if ( OverviewFrame.selected ) then
+        UIDropDownMenu_SetSelectedValue(OverviewFrameSelectionDropDown, OverviewFrame.selected);
+    end
+    UIDropDownMenu_SetText(self, CurrentRecord.name)
 end
 
+function OverviewFrameSelectionDropDown_Initialize(self)
+    local info = UIDropDownMenu_CreateInfo();
+     
+    local records = GetRecords()
+    -- If we ever change this logic, we also need to change the logic in RaidFinderFrame_UpdateAvailability
+    for i=1, #records do
+        local r = records[i]
+        info.text = r.name; --Note that the dropdown text may be manually changed in OverviewFrame_SetRaid
+        info.value = r;
+        info.isTitle = nil;
+        info.func = OverviewFrameSelectionDropDownButton_OnClick;
+        info.disabled = nil;
+        info.checked = (OverviewFrame.selected == info.value);
+        info.tooltipWhileDisabled = nil;
+        info.tooltipOnButton = nil;
+        info.tooltipTitle = nil;
+        info.tooltipText = nil;
+        UIDropDownMenu_AddButton(info);        
+    end
+end
+ 
+function OverviewFrameSelectionDropDownButton_OnClick(self)
+    local value = self.value
+    RaidFinderQueueFrame.selected = value;
+    CurrentRecord = RaidRecord:Read(value)
+    UIDropDownMenu_SetSelectedValue(OverviewFrameSelectionDropDown, value);
+    UIDropDownMenu_SetText(OverviewFrameSelectionDropDown, value.name);
+end
 
+function SubFrame_OnShow( self )
+    CurrentView = self:GetName()
+    ScrollFrameInit(self)
+end
 
 function ScrollFrameInit( view )
     scrollFrame = view["Container"]
@@ -167,11 +218,6 @@ function tablelength(T)
 end
 
 function GetInfoCount( view )
-    
-    if not CurrentRecord then
-        CurrentRecord = DefaultRaidRecord()
-    end
-
     if CurrentView == "MemberFrame" then
         return #(CurrentRecord.members)
     elseif CurrentView == "ItemFrame" then
@@ -187,7 +233,6 @@ function ScrollFrameUpdate( scrollFrame )
     local offset = HybridScrollFrame_GetOffset(scrollFrame)
     local buttons = scrollFrame.buttons
     local count = GetInfoCount(CurrentView)
-    print(CurrentView.."items :" .. count)
     for i=1,#buttons do
         local btn = buttons[i]
 
@@ -203,7 +248,7 @@ function ScrollFrameUpdate( scrollFrame )
             elseif CurrentView == "EventFrame" then
                 local name,time,point = GetEventInfo(i+offset)
                 btn.string1:SetText(name)
-                btn.string2:SetText(class)
+                btn.string2:SetText(time)
                 btn.string3:SetText(point)
             elseif CurrentView == "ItemFrame" then
                 local name,looter,point = GetLootInfo(i+offset)
@@ -232,15 +277,16 @@ end
 
 function GetRosterInfo( index )
     local mem = CurrentRecord.members[index]
-    return mem.name,mem.class,CurrentRecord:Lookup(mem.name),mem.factor
+    local curr = CurrentRecord:Lookup(mem.name)
+    return mem.name,lang_convert[string.upper(mem.class)],curr,GetFactor(curr)
 end
 
 function GetEventInfo( index )
     local e = CurrentRecord.events[index]
-    return e.name ,e.time , e.point
+    return e.name ,string.sub(e.ctime[1],6) , e.point
 end
 
 function GetLootInfo( index )
     local l = CurrentRecord.loots[index]
-    return l.name , l.looter ,l.point    
+    return l.name , CurrentRecord.members[l.player].name ,l.point    
 end

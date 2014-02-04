@@ -434,16 +434,14 @@
                             </Layer>
                         </Layers>
                         <Scripts>
-                          <OnClick>
-                            
-                          </OnClick>
+                          <OnShow function="OverviewFrameSelectionDropDown_SetUp"/>
                         </Scripts>
                     </Frame>
                     
                     <Button name="$parentCreateButton" inherits="UIPanelButtonTemplate" text="创建">
                         <Size x="100" y="22"/>
                         <Anchors>
-                            <Anchor point="BOTTOMLEFT" relativeTo="$parentSelectionDropDown" x="-150" y="-4"/>
+                            <Anchor point="BOTTOMLEFT" relativeTo="$parentSelectionDropDown" x="-150" y="6"/>
                         </Anchors>
                         <Scripts>
                             <OnClick>

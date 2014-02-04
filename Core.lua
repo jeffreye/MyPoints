@@ -9,35 +9,50 @@ local last_bid = 0 -- time
 local countdown = -1
 
 local convert_table = {
-	["猎人"] = "猎人",
-	["战士"] = "战士",
-	["萨满"] = "萨满",
-	["武僧"] = "武僧",
-	["盗贼"] = "盗贼",
-	["法师"] = "法师",
-	["德鲁伊"] = "德鲁伊",
-	["死亡骑士"] = "死亡骑士",
-	["圣骑士"] = "圣骑士",
-	["牧师"] = "牧师",
-	["术士"] = "术士",
-
-	["LR"] = "猎人",
-	["ZS"] = "战士",
-	["SM"] = "萨满",
-	["WS"] = "武僧",
-	["DZ"] = "盗贼",
-	["FS"] = "法师",
-	["DLY"] = "德鲁伊",
-	["SWQS"] = "死亡骑士",
-	["QS"] = "圣骑士",
-	["MS"] = "牧师",
-	["SS"] = "术士",
+	["Hunter"] = "Hunter",
+	["Warrior"] = "Warrior",
+	["Shaman"] = "Shaman",
+	["Monk"] = "Monk",
+	["Rogue"] = "Rogue",
+	["Mage"] = "Mage",
+	["Druid"] = "Druid",
+	["Deathknight"] = "Deathknight",
+	["Paladin"] = "Paladin",
+	["Priest"] = "Priest",
+	["Warlock"] = "Warlock",
 
 
-	["XD"] = "德鲁伊",
-	["DK"] = "死亡骑士",
+	["猎人"]    ="Hunter",
+	["战士"]    ="Warrior",
+	["萨满"]    ="Shaman",
+	["武僧"]    ="Monk" ,
+	["盗贼"]    ="Rogue" ,
+	["法师"]    ="Mage" ,
+	["德鲁伊"]  ="Druid" ,
+	["死亡骑士"]="Deathknight",
+	["圣骑士"]  ="Paladin",
+	["牧师"]    ="Priest",
+	["术士"]    ="Warlock",
+
+	["LR"]  ="Hunter",
+	["ZS"]  ="Warrior",
+	["SM"]  ="Shaman",
+	["WS"]  ="Monk" ,
+	["DZ"]  ="Rogue" ,
+	["FS"]  ="Mage" ,
+	["DLY"] ="Druid" ,
+	["SWQS"]="Deathknight",
+	["QS"]  ="Paladin",
+	["MS"]  ="Priest",
+	["SS"]  ="Warlock",
+
+
+	["XD"] = "Druid",
+	["DK"] = "Deathknight",
 
 }
+
+
 
 function OnEvent( self , event , arg1 , arg2 )
 		print(event)
@@ -79,11 +94,15 @@ function OnEvent( self , event , arg1 , arg2 )
 			local name, rank, subgroup, level, class, fileName, zone, online, isDead, role, isML = GetRaidRosterInfo(index)
 			if CurrentRecord:GetDetails(name) == nil then
 				CurrentRecord:AddMember(name,class)
-			end
 		end
+			end
 	elseif event == "ADDON_LOADED" then
 		-- acquire the options
 		-- or initialize data
+	    if not CurrentRecord then
+	        CurrentRecord = DefaultRaidRecord()
+	    end
+
 		if not DKP_Options  then
 			initialize()
 		end
@@ -154,7 +173,7 @@ function initialize()
 			true, -- [3]
 		},
 		["announce_to_channel"] = 1,
-		["use_history"] = false,
+		["use_history"] = true,
 		["auto_invite_command"] = "1,组,",
 		["auto_announce"] = "开组啦开组啦,密我1进组",
 		["auto_publish_loots"] = true,
@@ -296,4 +315,14 @@ end
 function FinishAuctioning( frame )
 	Auctioning = false
 	frame.UnregisterEvent("CHAT_MSG_OFFICER")
+end
+
+function GetFactor( dkp )
+	for i,v in pairs(DKP_Options["dkp_factors"]) do
+		if dkp > v["gt"] and dkp <= v["le"] then
+			return v["factor"]
+		end
+	end
+	print(dkp .. " is outrange")
+	return 1
 end
