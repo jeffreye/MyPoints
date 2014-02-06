@@ -4,11 +4,10 @@
 CurrentRecord = nil
 LootItemList = {}
 
-local robot_flag = "天国的基器人:"
-local last_bid = 0 -- time
-local countdown = -1
+robot_flag = "~:"
+last_bid = { looter = "无人" , bid = 0 , time = 0 } -- time
 
-local convert_table = {
+convert_table = {
 	["Hunter"] = "Hunter",
 	["Warrior"] = "Warrior",
 	["Shaman"] = "Shaman",
@@ -55,6 +54,7 @@ local convert_table = {
 
 
 function OnEvent( self , event , arg1 , arg2 )
+	print(event)
 	if event == "CHAT_MSG_WHISPER" then
 		-- auto invite or lookup the dkp
 		if  (not IsInGroup(LE_PARTY_CATEGORY_HOME) or UnitIsGroupLeader("player")) and string.find(DKP_Options["auto_invite_command"],arg1) then
@@ -85,17 +85,18 @@ function OnEvent( self , event , arg1 , arg2 )
 					local link = GetLootSlotLink(slot)
 					table.insert(LootItemList,link)
 					SendChatMessage(link,"RAID")
-					LootSlot(self.slot)
 				end
 			end
 		end
 
+		AuctionFrame:Show()
 		-- and popup the auction frame
-	elseif event == "RAID_ROSTER_UPDATE" then
+	elseif event == "GROUP_ROSTER_UPDATE" then
 		-- welcome new member!
+		-- or someone get online
 		-- or...leave one
 		for i=1,GetNumGroupMembers() do
-			local name, rank, subgroup, level, class, fileName, zone, online, isDead, role, isML = GetRaidRosterInfo(index)
+			local name, rank, subgroup, level, class, zone, online, isDead, role, isML = GetRaidRosterInfo(i)
 			if CurrentRecord:GetDetails(name) == nil then
 				CurrentRecord:AddMember(name,class)
 			end
@@ -111,6 +112,18 @@ function OnEvent( self , event , arg1 , arg2 )
 			initialize()
 		end
 		self:RegisterEvent("CHAT_MSG_WHISPER",OnEvent)
+		self:RegisterEvent("GROUP_ROSTER_UPDATE",OnEvent)
+		if DKP_Options["auto_publish_loots"] then
+			self:RegisterEvent("LOOT_OPENED",OnEvent)
+		end
+		if  IsInRaid() then
+			for i=1,GetNumGroupMembers() do
+				local name, rank, subgroup, level, class, fileName, zone, online, isDead, role, isML = GetRaidRosterInfo(i)
+				if CurrentRecord:GetDetails(name) == nil then
+					CurrentRecord:AddMember(name,convert_table[class])
+				end
+			end
+		end
 	elseif event == "PLAYER_LOGOUT" then
 		-- save the variable
 		if CurrentRecord:IsClose() then
@@ -119,6 +132,20 @@ function OnEvent( self , event , arg1 , arg2 )
 		Save()
 		self:UnregisterEvent("CHAT_MSG_WHISPER",OnEvent)
 	end
+end
+
+function shallowcopy(orig)
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in pairs(orig) do
+            copy[orig_key] = orig_value
+        end
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
 end
 
 function Save( )
@@ -243,32 +270,6 @@ function initialize()
 	}
 end
 
-function StartNewRecording(name,frame)
-	CurrentRecord = RaidRecord:new(name,DKP_Options["use_history"])
-
-	--frame.RegisterEvent("CHAT_MSG_WHISPER",OnEvent)
-	--frame.RegisterEvent("CHAT_MSG_OFFICER",OnEvent)
-	frame.RegisterEvent("RAID_ROSTER_UPDATE",OnEvent)
-	if DKP_Options["auto_publish_loots"] then
-		frame.RegisterEvent("LOOT_OPENED",OnEvent)
-	end
-
-	DKP_Data[#DKP_Data] = CurrentRecord
-end
-
-function FinishRecording(frame)
-
-	--frame.UnregisterEvent("CHAT_MSG_WHISPER")
-	--frame.UnregisterEvent("CHAT_MSG_OFFICER")
-	frame.UnregisterEvent("RAID_ROSTER_UPDATE")
-	if DKP_Options["auto_publish_loots"] then
-		frame.UnregisterEvent("LOOT_OPENED")
-	end
-	-- set the export xml
-
-	CurrentRecord = nil
-end
-
 function StartsWith( str , other )
 	local s,e = strfind(str,other)
 	return s == 1
@@ -286,7 +287,9 @@ function VerifyBid( message , sender )
 		elseif bid <= 0 then
 			SendChatMessage(robot_flag.."这么点分就想拿东西,太天真了~","OFFICER")
 		else
-			last_bid = time()
+			last_bid.looter = sender
+			last_bid.bid = bid
+			last_bid.time = time()
 		end
 	else 
 		SendChatMessage(robot_flag.."你真的是在出分吗?别闹~","OFFICER")
@@ -296,22 +299,25 @@ end
 function GetRecordByName( name )
 	local NewLine = "\n"
 	if not CurrentRecord then 
-		local dkp = Lookup(1,name)
+	end
+
+	local player = CurrentRecord:GetDetails(name) --- wrong way!
+	if not player then
+		local dkp = CurrentRecord:GetPrevDKP(name)
 		SendChatMessage("您当前的DKP:" .. dkp .. "分","WHISPER",nil,name)
 		SendChatMessage("当前系数为" .. GetFactor(dkp),"WHISPER",nil,name)
 		return
 	end
-
-	local player = CurrentRecord:GetDetails(name) --- wrong way!
 	SendChatMessage("您当前可用的DKP:" .. CurrentRecord:Lookup(name) .. "分","WHISPER",nil,name)
 	SendChatMessage("进团分数:" .. player.previous .."分，" .. "当前系数为:" .. player.factor,"WHISPER",nil,name)
 	SendChatMessage("本次活动总共获得" .. player.gain .. "分","WHISPER",nil,name)
 	local count = 1
 	for id,e in pairs(player.events) do
-		SendChatMessage(events .. count .. ":" ..e.name .. "--" .. e.point .."分" ,"WHISPER",nil,name)
+		SendChatMessage(count .. ":" ..e.name .. "--" .. e.point .."分" ,"WHISPER",nil,name)
 		count = count + 1
 	end
 	SendChatMessage("本次活动物品总共花费" ..player.cost .. "分","WHISPER",nil,name)
+	count = 1
 	for id,item in pairs(player.loots) do
 		SendChatMessage( count .. ":" ..item.name .. "--" .. item.point .."分","WHISPER",nil,name)
 		count = count + 1

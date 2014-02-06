@@ -217,13 +217,30 @@ end
 function RaidRecord:GetDetails( name )
 	for n,v in pairs(self.members) do
 		if v.name == name then
-			return v
+			local player = shallowcopy(v)
+			player.previous = self:GetPrevDKP(name)
+			player.factor = GetFactor(player.previous)
+			player.gain = self.gain[player.id]
+			player.cost = self.cost[player.id]
+			player.events = {}
+			for k,v in pairs(self.events) do
+				if tContains(v.players,player.id) then
+					table.insert(player.events,v)
+				end
+			end
+			player.loots = {}
+			for k,v in pairs(self.loots) do
+				if v.player == player.id then
+					table.insert(player.loots,v)
+				end
+			end
+			return player
 		end
 	end
 	return nil
 end
 
-
+--- get avaliable dkp
 function RaidRecord:Lookup( memberName )
 	local prev = self:GetPrevDKP(memberName)
 	local details = self:GetDetails(memberName)

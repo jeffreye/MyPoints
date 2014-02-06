@@ -83,7 +83,7 @@
           <Anchor relativeTo="$parentStart" relativePoint="RIGHT" point="LEFT" x="0" y="0" />
         </Anchors>
         <Scripts>
-          <OnClick function="CancelAuction" />
+          <OnClick function="RemoveAuction" />
         </Scripts>
       </Button>
     </Frames>
@@ -142,6 +142,7 @@
     </Frames>
     <Scripts>
       <OnLoad function="AuctionFrame_OnLoad" />
+      <OnShow function="AuctionFrame_OnShow" />
       <OnDragStart>self:StartMoving();</OnDragStart>
       <OnDragStop>self:StopMovingOrSizing();</OnDragStop>
     </Scripts>
@@ -922,7 +923,7 @@
                         <Scripts>
                           <OnLoad>
                             _G[self:GetName() .. "Text"]:SetText("所有")
-                            if CurrentView == "EventFrame" then
+                            if CurrentView ~= "ItemFrame" then
                               self:Show()
                             else
                               self:Hide()
@@ -949,7 +950,7 @@
                         <Scripts>
                           <OnLoad>
                             _G[self:GetName() .. "Text"]:SetText("全团")
-                            if CurrentView == "EventFrame" then
+                            if CurrentView ~= "ItemFrame" then
                               self:Show()
                             else
                               self:Hide()
@@ -971,7 +972,7 @@
                         <Scripts>
                           <OnLoad>
                             _G[self:GetName() .. "Text"]:SetText("在线")
-                            if CurrentView == "EventFrame" then
+                            if CurrentView ~= "ItemFrame" then
                               self:Show()
                             else
                               self:Hide()
@@ -993,7 +994,7 @@
                         <Scripts>
                           <OnLoad>
                             _G[self:GetName() .. "Text"]:SetText("反选")
-                            if CurrentView == "EventFrame" then
+                            if CurrentView ~= "ItemFrame" then
                               self:Show()
                             else
                               self:Hide()
