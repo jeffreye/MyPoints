@@ -155,19 +155,19 @@ end
 
 function TabsFrame_OnLoad( self )
     tinsert(UISpecialFrames, MyPointsFrame:GetName());
-	SetPortraitToTexture(self.groupButton1.icon, "Interface\\Icons\\INV_Helmet_08")
+	SetPortraitToTexture(self.groupButton1.icon, "Interface\\EncounterJournal\\UI-EJ-PortraitIcon")
     self.groupButton1.name:SetText("活动")
     SetPortraitToTexture(self.groupButton2.icon, "Interface\\LFGFrame\\UI-LFR-PORTRAIT")
     self.groupButton2.name:SetText("人员")
     SetPortraitToTexture(self.groupButton3.icon, "Interface\\Icons\\Icon_Scenarios")
     self.groupButton3.name:SetText("事件")
-    SetPortraitToTexture(self.groupButton4.icon, "Interface\\Icons\\Icon_Scenarios")
+    SetPortraitToTexture(self.groupButton4.icon, "Interface\\Icons\\INV_Weapon_Glave_01")
     self.groupButton4.name:SetText("物品")
-    SetPortraitToTexture(self.groupButton5.icon, "Interface\\Icons\\Icon_Scenarios")
+    SetPortraitToTexture(self.groupButton5.icon, "Interface\\Icons\\INV_Misc_EngGizmos_37")
     self.groupButton5.name:SetText("设置")
 
-    MyPointsFrame.TitleText:SetText("My Points")
-    SetPortraitToTexture(MyPointsFrame.portrait, "Interface\\LFGFrame\\UI-LFG-PORTRAIT")
+    MyPointsFrame.TitleText:SetText("DKP记录仪")
+    SetPortraitToTexture(MyPointsFrame.portrait, "Interface\\FriendsFrame\\FriendsFrameScrollIcon")
 
     groupFrames ={ OverviewFrame , MemberFrame , EventFrame , ItemFrame , SettingFrame }
 
