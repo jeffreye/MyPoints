@@ -1,5 +1,10 @@
 
 SlashCmdList["MYPOINTS"] = function(arg1, ...)
+    if arg1 == "a" then
+        AuctionFrame:Show()
+        return
+    end
+
 	if MyPointsFrame:IsShown() then
 		MyPointsFrame:Hide()
 	else
@@ -55,8 +60,101 @@ Selected = nil
 
 AutoAnnounce = false
 
+function AuctionFrame_OnLoad( self )
+    tinsert(UISpecialFrames, self:GetName());
+    --register for moving frame
+    self:RegisterForDrag("LeftButton")
+    -- update list
+    local scrollFrame = self.Container
+    scrollFrame.ScrollBar.doNotHide = true
+    HybridScrollFrame_CreateButtons(scrollFrame, "AuctionItemButtonTemplate", 0, 0, "TOPLEFT", "TOPLEFT", 0, -SCROLLFRAME_BUTTON_OFFSET, "TOP", "BOTTOM")
+    scrollFrame.update = AuctionFrame_UpdateList
+    scrollFrame.update()
+end
+
+function AuctionFrame_UpdateList()
+    local scrollFrame = AuctionFrame.Container
+    local offset = HybridScrollFrame_GetOffset(scrollFrame)
+    local buttons = scrollFrame.buttons
+    local count = #LootItemList
+    for i=1,#buttons do
+        local btn = buttons[i]
+
+        if i + offset > count then
+            btn:Hide()
+        else
+            local name, link, quality, iLevel, reqLevel, class, subclass, maxStack, equipSlot, texture, _ = GetItemInfo(LootItemList[i+offset])
+            btn.itemLink = link
+            local color = ITEM_QUALITY_COLORS[quality]
+            local text = _G[btn:GetName() .. "Text"]
+            text:SetText(name)
+            text:SetVertexColor(color.r, color.g, color.b);
+            btn.icon:SetTexture(texture);
+            SetItemButtonNameFrameVertexColor(button, 0.5, 0.5, 0.5);
+            SetItemButtonTextureVertexColor(button, 1.0, 1.0, 1.0);
+            SetItemButtonNormalTextureVertexColor(button, 1.0, 1.0, 1.0);
+        end
+    end
+
+    local totalHeight = count * (20 + 2)
+    local displayedHeight = #buttons * (20 + 2)
+    HybridScrollFrame_Update(scrollFrame, totalHeight, displayedHeight)
+end
+
+Auctioning = false
+
+function StartAuction(frame)
+    Auctioning = true
+    frame.RegisterEvent("CHAT_MSG_OFFICER",OnEvent)
+    -- register time callbacks
+    -- create a timer
+    
+    frame:SetScript("OnUpdate", AuctioningTimerCallback)
+end
+
+function AuctioningTimerCallback()
+    if countdown == 0 then
+        SendChatMessage("禁止出分","OFFICER")
+        countdown = countdown - 1
+    elseif countdown ~= -1 then
+        SendChatMessage(tostring(countdown),"OFFICER")
+        countdown = countdown - 1
+    end
+
+    local delta = time() - last_bid
+    if delta >= DKP_Options["item_auction_countdown_after_slience"] then
+        SendChatMessage("无人出分,开始倒数","OFFICER")
+        countdown = 5
+    else 
+        countdown = -1
+    end
+end
+
+function CancelAuction( frame )
+    Auctioning = false
+    frame.UnregisterEvent("CHAT_MSG_OFFICER")
+    frame:SetScript("onUpdate", nil)
+end
+
+function OpenItemInfoTooltip( btn )
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:SetHyperlink(btn.itemLink)
+    CursorUpdate(self)
+end
+
+function CloseItemInfoTooltip( btn )
+    GameTooltip:Hide()
+    ResetCursor()
+end
+
+function AuctionItem_Click( btn )
+     if ( IsModifiedClick() ) then
+        HandleModifiedItemClick(btn.itemLink)
+    end
+end
 
 function TabsFrame_OnLoad( self )
+    tinsert(UISpecialFrames, MyPointsFrame:GetName());
 	SetPortraitToTexture(self.groupButton1.icon, "Interface\\Icons\\INV_Helmet_08")
     self.groupButton1.name:SetText("活动")
     SetPortraitToTexture(self.groupButton2.icon, "Interface\\LFGFrame\\UI-LFR-PORTRAIT")
@@ -89,6 +187,15 @@ function TabsFrame_OnLoad( self )
      
     local f = CreateFrame("frame")
     f:SetScript("OnUpdate", onUpdate)
+
+    --need to support chatframe
+    hooksecurefunc("HandleModifiedItemClick", OnModifiedClickItem)
+end
+
+function OnModifiedClickItem( link )
+    if IsShiftKeyDown() and  NewFrame.name:HasFocus() then
+        NewFrame.name:Insert(link)
+    end
 end
 
 
@@ -366,8 +473,7 @@ function NewEvent(self,modifyData)
     NewFrame.point:SetNumber(0)
     scrollFrame.data = GetMembers()
 
-    if modifyData then
-        IsModify = true
+    if IsModify then
         NewFrame.id = modifyData.id
         NewFrame.name:SetText(modifyData.name)
         NewFrame.point:SetNumber(modifyData.point)
@@ -479,7 +585,7 @@ function ModifyItem( btn )
     if CurrentView == "MemberFrame" then
         return
     end
-
+    IsModify = true
     NewEvent(nil,CurrentView=="ItemFrame" and CurrentRecord.loots[btn.id] or CurrentRecord.events[btn.id])
     --refresh data
     _G[CurrentView].Container.update()

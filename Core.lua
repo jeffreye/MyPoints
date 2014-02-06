@@ -2,7 +2,7 @@
 -- SavedVariables: DKP_Options
 
 CurrentRecord = nil
-Auctioning = false
+LootItemList = {}
 
 local robot_flag = "天国的基器人:"
 local last_bid = 0 -- time
@@ -81,7 +81,12 @@ function OnEvent( self , event , arg1 , arg2 )
 		-- publish the items
 		if DKP_Options["auto_publish_loots"] then
 			for slot=1,GetNumLootItems() do
-				SendChatMessage(GetLootSlotLink(slot),"RAID")
+				if GetLootSlotType(slot) == LOOT_SLOT_ITEM  then
+					local link = GetLootSlotLink(slot)
+					table.insert(LootItemList,link)
+					SendChatMessage(link,"RAID")
+					LootSlot(self.slot)
+				end
 			end
 		end
 
@@ -318,41 +323,6 @@ function LootAllItems()
 	for slot=1,GetNumLootItems() do
 		LootSlot(slot)
 	end
-end
-
-function StartAuctioning(frame)
-	Auctioning = true
-	frame.RegisterEvent("CHAT_MSG_OFFICER",OnEvent)
-	-- register time callbacks
-    -- create a timer
-    local function onUpdate(self,elapsed)
-         AuctioningTimerCallback()
-     
-    -- local f = CreateFrame("frame")
-    -- f:SetScript("OnUpdate", onUpdate)
-end
-
-function AuctioningTimerCallback()
-	if countdown == 0 then
-		SendChatMessage("禁止出分","OFFICER")
-		countdown = countdown - 1
-	elseif countdown ~= -1 then
-		SendChatMessage(tostring(countdown),"OFFICER")
-		countdown = countdown - 1
-	end
-
-	local delta = time() - last_bid
-	if delta >= DKP_Options["item_auction_countdown_after_slience"] then
-		SendChatMessage("无人出分,开始倒数","OFFICER")
-		countdown = 5
-	else 
-		countdown = -1
-	end
-end
-
-function FinishAuctioning( frame )
-	Auctioning = false
-	frame.UnregisterEvent("CHAT_MSG_OFFICER")
 end
 
 function GetFactor( dkp )

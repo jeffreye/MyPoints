@@ -2,6 +2,88 @@
   <Script file="Core.lua" />
 	<Script file="UI.lua" />
 
+  <Button name="AuctionItemButtonTemplate" inherits="LootButtonTemplate" virtual="true" >
+    <Frames>
+      <Button name="$parentStart" parentKey="startButton" inherits="UIPanelButtonTemplate" text="开拍">
+        <Size x="60" y="32" />
+        <Anchors>
+          <Anchor point="LEFT" x="148" y="0" />
+        </Anchors>
+        <Scripts>
+          <OnClick function="StartAuction" />
+        </Scripts>
+      </Button>
+      <Button name="$parentCancel" parentKey="cancelButton" inherits="UIPanelButtonTemplate" text="取消">
+        <Size x="60" y="32" />
+        <Anchors>
+          <Anchor relativeTo="$parentStart" relativePoint="RIGHT" point="LEFT" x="0" y="0" />
+        </Anchors>
+        <Scripts>
+          <OnClick function="CancelAuction" />
+        </Scripts>
+      </Button>
+    </Frames>
+    <Scripts>
+      <OnEnter function="OpenItemInfoTooltip" />
+      <OnLeave function="CloseItemInfoTooltip" />
+      <OnClick function="AuctionItem_Click" />
+    </Scripts>
+  </Button>
+
+  <Frame name="AuctionFrame" inherits="ButtonFrameTemplate" clampedToScreen="true" parent="UIParent" movable="true" enableMouse="true" hidden="true">
+    <Size x="300" y="320" />
+    <Anchors>
+      <Anchor point="CENTER" x="300" y="-100" />
+    </Anchors>
+    <Layers>
+      <Layer level="OVERLAY" textureSubLevel="-1">
+        <Texture name="LootFramePortraitOverlay" file="Interface\TargetingFrame\TargetDead">
+          <Size x="58" y="58"/>
+          <Anchors>
+            <Anchor point="TOPLEFT" x="-5" y="5"/>
+          </Anchors>
+        </Texture>
+      </Layer>
+      <Layer level="ARTWORK">
+        <FontString inherits="GameFontNormal" text="装备拍卖">
+          <Anchors>
+            <Anchor point="TOP" x="12" y="-2"/>
+          </Anchors>
+        </FontString>
+      </Layer>
+    </Layers>
+    <Frames>
+      <ScrollFrame name="$parentContainer" parentKey="Container" inherits="HybridScrollFrameTemplate">
+        <Anchors>
+          <Anchor point="TOPLEFT" x="6" y="-64" />
+          <Anchor point="BOTTOMRIGHT" x="-6" y="30" />
+        </Anchors>
+        <Frames>
+          <Slider name="$parentScrollBar" parentKey="ScrollBar" inherits="HybridScrollBarTemplate">
+            <Anchors>
+              <Anchor point="TOPLEFT" relativePoint="TOPRIGHT">
+                <Offset>
+                  <AbsDimension x="-20" y="-12"/>
+                </Offset>
+              </Anchor>
+              <Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT">
+                <Offset>
+                  <AbsDimension x="0" y="12"/>
+                </Offset>
+              </Anchor>
+            </Anchors>
+          </Slider>
+        </Frames>
+      </ScrollFrame>
+    </Frames>
+    <Scripts>
+      <OnLoad function="AuctionFrame_OnLoad" />
+      <OnDragStart>self:StartMoving();</OnDragStart>
+      <OnDragStop>self:StopMovingOrSizing();</OnDragStop>
+    </Scripts>
+  </Frame>
+  
+  
   <Button name="GroupButtonTemplate" motionScriptsWhileDisabled="true" virtual="true">
     <Size x="203" y="60"/>
     <Layers>
@@ -653,6 +735,18 @@
                                     </Scripts>
                                 </EditBox>
 
+                            <Button name="$parentOpenAuctionFrame" inherits="GameMenuButtonTemplate"  text="查看未拍卖装备">
+                              <Size x="150" y="30" />
+                              <Anchors>
+                                <Anchor relativeTo="$parentAutoAnnounce" point="BOTTOMLEFT" x="-20" y="35" />
+                              </Anchors>
+                              <Scripts>
+                                <OnClick>
+                                  AuctionFrame:Show()
+                                </OnClick>
+                              </Scripts>
+                            </Button>
+
                           </Frames>
                           <Scripts>
                             <OnShow function="RaidInfo_OnShow" />
@@ -747,6 +841,9 @@
                         <Anchors>
                           <Anchor relativeTo="$parentName" relativePoint="TOPRIGHT" point="TOPLEFT" x="10" y="0"  />
                         </Anchors>
+                        <Scripts>
+                          <OnLoad>self:SetHyperlinksEnabled(true)</OnLoad>
+                        </Scripts>
 
                       </EditBox>
 
