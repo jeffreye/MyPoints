@@ -15,8 +15,6 @@ if MyPointsFrame then
     MyPointsFrame:RegisterEvent("PLAYER_LOGOUT")
 end
 
-
-
 local lang_convert = {
     ["HUNTER"] = "猎人",
     ["WARRIOR"] = "战士",
@@ -53,6 +51,10 @@ local ColumnData = {
 }
 
 CurrentView = "MemberFrame"
+Selected = nil
+
+AutoAnnounce = false
+
 
 function TabsFrame_OnLoad( self )
 	SetPortraitToTexture(self.groupButton1.icon, "Interface\\Icons\\INV_Helmet_08")
@@ -70,6 +72,23 @@ function TabsFrame_OnLoad( self )
     SetPortraitToTexture(MyPointsFrame.portrait, "Interface\\LFGFrame\\UI-LFG-PORTRAIT")
 
     groupFrames ={ OverviewFrame , MemberFrame , EventFrame , ItemFrame , SettingFrame }
+
+    -- create a timer
+    local total = 0 
+    local function onUpdate(self,elapsed)
+        if not AutoAnnounce then
+            return
+        end
+
+        total = total + elapsed
+        if total >= DKP_Options["auto_announce_interval"] then
+            SendChatMessage(DKP_Options["auto_announce"],"GUILD")
+            total = 0
+        end
+    end
+     
+    local f = CreateFrame("frame")
+    f:SetScript("OnUpdate", onUpdate)
 end
 
 
@@ -80,6 +99,7 @@ end
 
 function MyPointsFrameGroupButton_OnClick( self )
     ShowGroupFrame(groupFrames[self:GetID()])
+    NewFrame:Hide()
 end
 
 function ShowGroupFrame(frame)
@@ -98,25 +118,27 @@ function ShowGroupFrame(frame)
 end
 
 function RaidInfo_OnShow( self )
-    self.RaidNameLabel:SetText("活动名称:")
-    self.CreateTimeLabel:SetText("创建时间:"..date())
-    self.EndTimeLabel:SetText("结束时间:"..date())
+    self.RaidNameLabel:SetText("活动名称:" .. CurrentRecord.name)
+    self.CreateTimeLabel:SetText("创建时间:"..CurrentRecord.createtime)
+    local endtime = CurrentRecord.endtime or "(活动尚未结束)"
+    self.EndTimeLabel:SetText("结束时间:".. endtime)
+    self.AnnounceBox:SetText(DKP_Options["auto_announce"])
+    self.AnnounceIntervalBox:SetNumber(DKP_Options["auto_announce_interval"])
 end
 
 function SwitchAutoAnnounce( checked )
-    if checked then
-        print("on")
-    else
-        print("off")
-    end
+    AutoAnnounce = checked and true or false
 end
 
 function AnnounceBox_OnTextChanged( self )
-    print("announce" .. self:GetText())
+    DKP_Options["auto_announce"] = self:GetText()
 end
 
 function AnnounceIntervalBox_OnTextChanged( self )
-    print("announce time" .. self:GetText())
+    if self:GetNumber() == 0 then
+        return
+    end
+    DKP_Options["auto_announce_interval"] = self:GetNumber()
 end
 
 function OverviewFrameSelectionDropDown_SetUp(self)
@@ -124,20 +146,19 @@ function OverviewFrameSelectionDropDown_SetUp(self)
     if ( OverviewFrame.selected ) then
         UIDropDownMenu_SetSelectedValue(OverviewFrameSelectionDropDown, OverviewFrame.selected);
     end
-    UIDropDownMenu_SetText(self, CurrentRecord.name)
+    UIDropDownMenu_SetText(self, strsub(CurrentRecord.name,1,4))
 end
 
 function OverviewFrameSelectionDropDown_Initialize(self)
     local info = UIDropDownMenu_CreateInfo();
      
-    local records = GetRecords()
-    -- If we ever change this logic, we also need to change the logic in RaidFinderFrame_UpdateAvailability
+    local records = GetRawRecords()
     for i=1, #records do
         local r = records[i]
         info.text = r.name; --Note that the dropdown text may be manually changed in OverviewFrame_SetRaid
         info.value = r;
         info.isTitle = nil;
-        info.func = OverviewFrameSelectionDropDownButton_OnClick;
+        info.func = function() OverviewFrameSelectionDropDownButton_OnClick(r) end
         info.disabled = nil;
         info.checked = (OverviewFrame.selected == info.value);
         info.tooltipWhileDisabled = nil;
@@ -148,12 +169,11 @@ function OverviewFrameSelectionDropDown_Initialize(self)
     end
 end
  
-function OverviewFrameSelectionDropDownButton_OnClick(self)
-    local value = self.value
-    RaidFinderQueueFrame.selected = value;
+function OverviewFrameSelectionDropDownButton_OnClick(value)
+    OverviewFrame.selected = value;
     CurrentRecord = RaidRecord:Read(value)
     UIDropDownMenu_SetSelectedValue(OverviewFrameSelectionDropDown, value);
-    UIDropDownMenu_SetText(OverviewFrameSelectionDropDown, value.name);
+    RaidInfo_OnShow(OverviewFrame.RaidInfo)
 end
 
 function SubFrame_OnShow( self )
@@ -162,13 +182,14 @@ function SubFrame_OnShow( self )
 end
 
 function ScrollFrameInit( view )
-    scrollFrame = view["Container"]
-    -- scrollFrame.ScrollBar.doNotHide = true
+    local scrollFrame = view["Container"]
+    scrollFrame.ScrollBar.doNotHide = true
     HybridScrollFrame_CreateButtons(scrollFrame, "RaidRosterButtonTemplate", 0, 0, "TOPLEFT", "TOPLEFT", 0, -SCROLLFRAME_BUTTON_OFFSET, "TOP", "BOTTOM")
     scrollFrame.update = function ()
         ScrollFrameUpdate(scrollFrame)
     end
 
+    -- update column headers
     local numColumns = #TableColumns[view:GetName()]
     local stringsInfo = {}
     local stringOffset = 0;
@@ -218,11 +239,11 @@ function tablelength(T)
 end
 
 function GetInfoCount( view )
-    if CurrentView == "MemberFrame" then
+    if view == "MemberFrame" then
         return #(CurrentRecord.members)
-    elseif CurrentView == "ItemFrame" then
+    elseif view == "ItemFrame" then
         return #(CurrentRecord.loots)
-    elseif CurrentView == "EventFrame" then
+    elseif view == "EventFrame" then
         return #(CurrentRecord.events)
     else
         return 0
@@ -235,7 +256,7 @@ function ScrollFrameUpdate( scrollFrame )
     local count = GetInfoCount(CurrentView)
     for i=1,#buttons do
         local btn = buttons[i]
-
+        btn.id = i+offset
         if i + offset > count then
             btn:Hide()
         else
@@ -259,7 +280,6 @@ function ScrollFrameUpdate( scrollFrame )
 
             btn:Show()
         end
-
     end
 
     local totalHeight = count * (20 + 2)
@@ -289,4 +309,220 @@ end
 function GetLootInfo( index )
     local l = CurrentRecord.loots[index]
     return l.name , CurrentRecord.members[l.player].name ,l.point    
+end
+
+function shallowcopy(orig)
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in pairs(orig) do
+            copy[orig_key] = orig_value
+        end
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
+end
+
+function GetMembers()
+    local members = {}
+    for i,v in ipairs(CurrentRecord.members) do
+        local entity = shallowcopy(v)
+        entity.dkp = CurrentRecord:Lookup(entity.name)
+        -- entity.id = CurrentRecord:GetMemberId(i)
+        members[i] = entity
+    end
+    return members
+end
+
+function tableContains( table , element )
+    if not table then
+        return false
+    end
+
+    for k,v in pairs(table) do
+        if v == element then
+            return true
+        end
+    end
+    return false
+end
+
+function NewEvent(self,modifyData)
+    if CurrentView == "MemberFrame" then
+        self:SetText("暂不支持")
+        return
+    elseif CurrentRecord.name == "选择" then
+        print("请选择活动")
+        return
+    end
+
+    local scrollFrame = NewFrame.Container
+    scrollFrame.ScrollBar.doNotHide = true
+
+
+    NewFrame.name:SetText("")
+    NewFrame.point:SetNumber(0)
+    scrollFrame.data = GetMembers()
+
+    if modifyData then
+        IsModify = true
+        NewFrame.id = modifyData.id
+        NewFrame.name:SetText(modifyData.name)
+        NewFrame.point:SetNumber(modifyData.point)
+        for k,v in pairs(scrollFrame.data) do
+            v.checked = v.id == modifyData.player or tableContains(modifyData.players,v.id)
+        end
+    end
+
+
+    HybridScrollFrame_CreateButtons(scrollFrame, "NewEventButtonTemplate", 0, 0, "TOPLEFT", "TOPLEFT", 0, -SCROLLFRAME_BUTTON_OFFSET, "TOP", "BOTTOM")
+    
+    scrollFrame.update = function ()
+        local offset = HybridScrollFrame_GetOffset(scrollFrame)
+        local buttons = scrollFrame.buttons
+        local data = scrollFrame.data
+        local count = #data
+        for i=1,#buttons do
+            local btn = buttons[i]
+
+            if i + offset > count then
+                btn:Hide()
+            else
+                local entity= data[i+offset]
+                btn.data = entity
+                btn.checkButton:SetChecked(entity.checked)
+                btn.string1:SetText(entity.name) 
+                btn.string2:SetText(entity.dkp) -- dkp
+                btn.string3:SetText(UnitIsConnected(entity.name) and "在线" or "离线") -- online / offline
+                btn:Show()
+            end
+        end
+
+        local totalHeight = count * (20 + 2)
+        local displayedHeight = #buttons * (20 + 2)
+        HybridScrollFrame_Update(scrollFrame, totalHeight, displayedHeight)
+    end
+    scrollFrame.update()
+
+    _G[CurrentView]:Hide()
+    NewFrame:Show()
+end
+
+function BackToCurrentView()
+    -- I use a copy of data,thus it's unnecessary to revert
+    --RevertChange()
+    Save()
+    NewFrame:Hide()
+    _G[CurrentView]:Show()
+end
+
+function RevertChange()
+    local data = NewFrame.Container.data
+    for i=1,#data do
+        data[i].checked = nil
+    end
+end
+
+IsModify = false
+
+function NewEvent_Submit(  )
+    -- process new event
+    local name = NewFrame.name:GetText()
+    if name == "" then
+         return
+     end
+    local point = NewFrame.point:GetNumber()
+    local data = NewFrame.Container.data
+
+    --convert data to player's id
+    local players = {}
+    for i=1,#data do
+        if data[i].checked then
+            table.insert(players,data[i].id)
+        end
+    end
+
+    if IsModify then
+        IsModify = false
+        if CurrentView == "EventFrame" then
+            local modifyData = CurrentRecord.events[NewFrame.id]      
+            modifyData.name = name
+            modifyData.point = point
+            modifyData.players = players
+        elseif CurrentView == "ItemFrame" then
+            local modifyData = CurrentRecord.loots[NewFrame.id]      
+            modifyData.name = name
+            modifyData.point = point
+            modifyData.player = players[1]        
+        end
+    else
+        if CurrentView == "EventFrame" then
+            CurrentRecord:AddEvent(name,players,point)
+        elseif CurrentView == "ItemFrame" then
+            CurrentRecord:Loot(name,players[1],point)
+        end
+    end
+    BackToCurrentView()
+end
+
+function SelectItem( btn )
+    if Selected then
+        Selected:UnlockHighlight()
+    end
+    btn:LockHighlight()
+    Selected = btn
+end
+
+function ModifyItem( btn )
+    if CurrentView == "MemberFrame" then
+        return
+    end
+
+    NewEvent(nil,CurrentView=="ItemFrame" and CurrentRecord.loots[btn.id] or CurrentRecord.events[btn.id])
+    --refresh data
+    _G[CurrentView].Container.update()
+end
+
+
+
+function DeleteItem( btn )
+    local typeMapping = {
+        ["MemberFrame"] = TYPE_PLAYER,
+        ["ItemFrame"] = TYPE_ITEM,
+        ["EventFrame"] = TYPE_EVENT,
+    }
+    CurrentRecord:RemoveByName(Selected.id,typeMapping[CurrentView])
+    Save()
+    --refresh data
+    _G[CurrentView].Container.update()
+end
+
+function CreateNewRec( )
+    CurrentRecord = RaidRecord:new()
+    OverviewFrame.selected = CurrentRecord
+    OverviewFrameSelectionDropDown_SetUp(OverviewFrameSelectionDropDown)
+    RaidInfo_OnShow(OverviewFrame.RaidInfo)
+end
+
+function DeleteRec( )
+    CurrentRecord:Delete()
+    Save()
+    if GetRawRecords()[1] then
+        CurrentRecord = RaidRecord:Read(GetRawRecords()[1])
+    else
+        CurrentRecord = DefaultRaidRecord()
+    end
+    OverviewFrame.selected = CurrentRecord
+    OverviewFrameSelectionDropDown_SetUp(OverviewFrameSelectionDropDown)
+    RaidInfo_OnShow(OverviewFrame.RaidInfo)
+end
+
+-- event from OverviewFrameExportButton
+-- finish current rec & export
+function ExportRec()
+    CurrentRecord:Finish()
+    Save()
+    RaidInfo_OnShow(OverviewFrame.RaidInfo)
 end

@@ -14,6 +14,13 @@ function CurrentTime()
 end
 
 function DefaultRaidRecord()
+	for k,v in pairs(GetRawRecords()) do
+		if not v.endTime then -- it's current record
+			return RaidRecord:Read(v)
+		end
+	end
+
+	-- create a default record that contains all members
 	local record = RaidRecord:Default()	
 	for name,v in pairs(MiDKPData["dkp"][1]["members"]) do
 		record:AddMember(name,v["class"])
@@ -21,10 +28,19 @@ function DefaultRaidRecord()
 	return record
 end
 
+function GetRawRecords()
+	local list = {}
+	for k,v in pairs(MiDKP3_Config["raids"]) do
+		v.id = k
+		table.insert(list,v)
+	end
+	return list
+end
+
 function RaidRecord:Default()
 	local record_name = "选择"
 	local dkp_name = MiDKPData["dkp"][1]["name"]
-	local obj={ name=record_name , members={} , events={} , loots={} , gain = {} , cost ={},
+	local obj={ name=record_name ,createtime = CurrentTime()[1] ,endtime = nil , members={} , events={} , loots={} , gain = {} , cost ={},
 	 saveVar = {
 			["name"] = record_name,
 			["dkp"] = dkp_name,
@@ -51,7 +67,12 @@ end
 
 function RaidRecord:Read( dkpData )
 
-	local obj={ name=dkpData["name"] ,createtime = dkpData["ctime"], members={} , events={} , loots={} , gain = {} , cost ={}, saveVar = dkpData }
+	local obj={ name=dkpData["name"] ,createtime = dkpData["ctime"][1], members={} , events={} , loots={} , gain = {} , cost ={}, saveVar = dkpData }
+	if dkpData["endTime"] then
+		obj.endtime = dkpData["endTime"][1]
+	else
+		obj.endtime = nil
+	end
 
 	self.__index=self
 	local record=setmetatable(obj,self)
@@ -59,54 +80,71 @@ function RaidRecord:Read( dkpData )
 
 	local indexedPlayers = {}
 
-	for k,v in pairs(dkpData["entities"]) do
+	for k,v in pairs(dkpData["entities"]) do		
 		if v["type"] == TYPE_PLAYER then
-			if type(k) ~= "number" then
-				k = FindOrAdd(indexedPlayers,k)
-			end
-			record.members[k]=v
-			record.gain[k] = 0
-			record.cost[k] = 0
+			v.id = FindOrAdd(indexedPlayers,v.id or k)
+			record.members[v.id]=v
+			record.gain[v.id] = 0
+			record.cost[v.id] = 0
 		elseif v["type"] == TYPE_EVENT then
 			table.insert(record.events,v)
+			v.id = #record.events
 		elseif v["type"] == TYPE_ITEM then
 			table.insert(record.loots,v)
+			v.id = #record.loots
 		end
+		v.entityId = k
 	end
+
+	obj.idTable = indexedPlayers
 
 	-- refresh gain,cost
 	for _,e in pairs(record.events) do
-		for i,v in pairs(e["players"]) do
+		for i,v in pairs(e.players) do
 			v = FindOrAdd(indexedPlayers,v)
-			table[i] = v
-			record.gain[v] = record.gain[v] + e["point"]
+			e["players"][i] = v
+			record.gain[v] = record.gain[v] + e.point
 		end
 	end
 
 	for _,e in pairs(record.loots) do
-		p = FindOrAdd(indexedPlayers,e["player"])
+		p = FindOrAdd(indexedPlayers,e.player)
 		e["player"] = p
-		record.cost[p] = record.cost[p] + e["point"]
+		record.cost[p] = record.cost[p] + e.point
 	end
 
 	return record
 end
 
 function RaidRecord:new( record_name , dkp_name )
-	local obj={ name=record_name , members={} , events={} , loots={} , gain = {} , cost ={},
-	 saveVar = {
-			["name"] = record_name,
-			["dkp"] = dkp_name,
+	local saveVar = {
+	 		["id"] =  MiDKP.OO.Entity:GenerateID(),
+			["name"] = record_name or "团队活动" .. CurrentTime()[1],
+			["dkp"] = dkp_name or MiDKPData["dkp"][1]["name"],
 			["ctime"] = CurrentTime(),
 			["startTime"] = CurrentTime(),
+			["creator"] = UnitName("player"),
+			["active"] = false,
+			["status"] = 1,
+			["zones"] = {},
 			["entities"] = {}
 		} 
-	}
 
-	table.insert(MiDKP3_Config["raids"],obj.saveVar) -- update the var on account's profile
-	self.__index=self
-	setmetatable(obj,self)
-	return obj
+	MiDKP3_Config["raids"][saveVar.id] = saveVar -- update the var on account's profile
+	return RaidRecord:Read(saveVar)
+end
+
+function RaidRecord:Delete()
+	MiDKP3_Config["raids"][self.saveVar.id] = nil
+end
+
+function RaidRecord:IsClose()
+	return self.endtime
+end
+
+--the id in saveVar (Backward compatibility)
+function RaidRecord:GetMemberId( index )
+	return self.idTable[index] or index
 end
 
 function RaidRecord:AddMember( memberName , className )
@@ -118,7 +156,8 @@ function RaidRecord:AddMember( memberName , className )
 	}
 	table.insert(self.members,member)
 	table.insert(self.saveVar["entities"],member)
-	member["id"] = #self.saveVar["entities"]
+	member["id"] = #self.members
+	member.entityId = #self.saveVar["entities"]
 
 	self.gain[member["id"]] = 0
 	self.cost[member["id"]] = 0
@@ -126,6 +165,12 @@ function RaidRecord:AddMember( memberName , className )
 end
 
 function RaidRecord:AddEvent( eventName , playerList , eventPoint )
+	--update members' gain point
+	for k,v in pairs(playerList) do
+		self.gain[v] = self.gain[v] + eventPoint
+		playerList[k] = self:GetMemberId(v)
+	end
+
 	local event = {
 		["players"] = playerList,
 		["type"] = TYPE_EVENT,
@@ -134,13 +179,10 @@ function RaidRecord:AddEvent( eventName , playerList , eventPoint )
 		["name"] = eventName,
 	}
 	table.insert(self.events,event)
-	table.insert(self.saveVar["entities"],event)
-	event["id"] = #self.saveVar["entities"]
+	table.insert(self.saveVar.entities,event)
+	event.id = #self.events
+	event.entityId = #self.saveVar.entities
 
-	--update members' gain point
-	for _,v in pairs(playerList) do
-		self.gain[v] = self.gain[v] + eventPoint
-	end
 	return event
 end
 
@@ -149,19 +191,16 @@ function RaidRecord:Loot( itemName , looter ,eventPoint)
 		["type"] = TYPE_ITEM,
 		["point"] = eventPoint,
 		["ctime"] = CurrentTime(),
-		["player"] = GetMemberId(looter),
+		["player"] = self:GetMemberId(looter),
 		["name"] = itemName,
 	}
 	table.insert(self.loots,item)
 	table.insert(self.saveVar["entities"],item)
-	item["id"] = #self.saveVar["entities"]
-
+	item["id"] = #self.loots
+	item.entityId = #self.saveVar["entities"]
 
 	--update members' cost point
-
-	for _,v in pairs(playerList) do
-		self.cost[v] = self.cost[v] + eventPoint
-	end
+	self.cost[looter] = self.cost[looter] + eventPoint
 	return item
 end
 
@@ -184,29 +223,30 @@ function RaidRecord:GetDetails( name )
 	return nil
 end
 
+
 function RaidRecord:Lookup( memberName )
-	if self.members[memberName] then
-		local player = self.members[memberName]
-		return self.calculateOnHistory and player.previous - player.cost or player.previous - player.cost + player.gain*player.factor
-	else
-		-- TODO:look up in the database
-		return Lookup(1,memberName)
-	end
+	local prev = self:GetPrevDKP(memberName)
+	local details = self:GetDetails(memberName)
+	return prev - self.cost[details.id]
 end
 
-function Lookup( index , member )
+function RaidRecord:GetPrevDKP( memberName )
 	if not MiDKPData then
 		return 0
 	end
-	if not MiDKPData["dkp"][index] then
-		return 0
+
+	local m = nil
+	for k,v in pairs(MiDKPData["dkp"]) do
+		if v.name == self.saveVar.dkp then
+			m = v.members
+			break
+		end
 	end
 
-	local members = MiDKPData["dkp"][index]["members"]
-	if not members or not members[member] then
+	if not memberName or not m[memberName] then
 		return 0
 	end
-	return members[member]["score"]
+	return m[memberName]["score"]
 end
 
 function RaidRecord:Remove( entity )
@@ -220,10 +260,76 @@ function RaidRecord:Remove( entity )
 	self.saveVar["entities"][entity["id"]] = nil
 end
 
-function GetRecords()
-	local list = {}
-	for k,v in pairs(MiDKP3_Config["raids"]) do
-		table.insert(list,v)
+function RaidRecord:RemoveByName( index , content_type)
+	local mapping = {
+		[TYPE_ITEM] = self.loots,
+		[TYPE_EVENT] = self.events,
+		[TYPE_PLAYER] = self.members
+	}
+	local data = mapping[content_type][index]
+	local key = nil
+	for k,v in pairs(self.saveVar.entities) do
+		if v == data then
+			key = k
+			break
+		end
 	end
-	return list
+	if type(key) == "number" then
+		table.remove(self.saveVar["entities"],key)
+	else
+		self.saveVar["entities"][key] = nil
+	end
+	table.remove(mapping[content_type],index)
+end
+
+function RaidRecord:Finish()
+	self.saveVar.status = 3 -- finish flag
+	self.saveVar.endTime = CurrentTime()
+	self.endtime = self.saveVar.endTime[1]
+
+	--calculate extra points
+	local dict = {}
+	for _,v in pairs(self.members) do
+		dict[v.id] = 0
+	end
+
+	-- remove extra events
+	for i=#self.events,1,-1 do
+	    if self.events[i].extra or StartsWith(self.events[i].name,"DKP额外增长") then
+	        if type(self.events[i].entityId) == "number" then
+	        	table.remove(self.saveVar.entities,self.events[i].entityId)
+	        else
+	        	self.saveVar.entities[self.events[i].entityId] = nil
+	        end
+	        table.remove(self.events, i)
+	    end
+	end
+
+	for k,e in pairs(self.events) do
+		if e.point > 0 then
+			for _,playerId in pairs(e.players) do
+				dict[playerId] = dict[playerId] + e.point 
+			end
+		end
+	end
+
+	for id,acquired in pairs(dict) do
+		local prev = self:GetPrevDKP(self.members[id].name)
+		local factor = GetFactor(prev)
+		local event = {
+			["players"] = { id },
+			["type"] = TYPE_EVENT,
+			["point"] = acquired*factor,
+			["ctime"] = CurrentTime(),
+			["name"] = "DKP额外增长（上次DKP分值："..prev.." ,系数："..factor.."）",
+			["extra"] = true
+		}
+		table.insert(self.events,event)
+		table.insert(self.saveVar["entities"],event)
+		event.id = #self.events
+		event.entityId = #self.saveVar.entities
+	end
+
+	-- export to xml
+	MiDKP.OO.Raid:Load(self.saveVar.id):SaveAll()
 end

@@ -107,11 +107,22 @@
                 </FontString>
             </Layer>
         </Layers>
+       <Frames>
+         <GameTooltip name="$parentMyTooltip" parentKey="MyTooltip" inherits="GameTooltipTemplate" >
+           <Size x="120" y="30" />
+         </GameTooltip>
+       </Frames>
         <Scripts>
-            <OnLoad>
-                self:RegisterForClicks("LeftButtonUp", "RightButtonUp");
-            </OnLoad>
-            <OnClick function="RaidRosterButton_OnClick"/>
+          <OnEnter>
+            self.MyTooltip:SetOwner(self, "ANCHOR_BOTTOMRIGHT",-130,0)
+            self.MyTooltip:SetText("双击可进行修改", nil, nil, nil, nil, true)
+            self.MyTooltip:Show()
+          </OnEnter>
+          <OnLeave>
+            self.MyTooltip:Hide()
+          </OnLeave>
+          <OnDoubleClick function="ModifyItem" />
+          <OnClick function="SelectItem" />
         </Scripts>
         <HighlightTexture file="Interface\FriendsFrame\UI-FriendsFrame-HighlightBar" alphaMode="ADD" setAllPoints="true"/>
     </Button>
@@ -179,7 +190,6 @@
             </Anchors>
         </HighlightTexture>
     </Button>
-
 
 
     <Frame name="TableFrameTemplate" virtual="true" >
@@ -264,9 +274,7 @@
                   <Anchor point="BOTTOM" x="-80" y="4"/>
               </Anchors>
               <Scripts>
-                  <OnClick>
-
-                  </OnClick>
+                  <OnClick function="DeleteItem" />
               </Scripts>            
           </Button>
 
@@ -277,17 +285,90 @@
                   <Anchor point="BOTTOM" x="80" y="4" />
               </Anchors>
               <Scripts>
-                  <OnClick>
-
-                  </OnClick>
+                  <OnClick function="NewEvent" />
               </Scripts>
           </Button>
 
       </Frames>
     </Frame>
 
+  <Button name="NewEventButtonTemplate" virtual="true">
+    <Size>
+      <AbsDimension x="299" y="20"/>
+    </Size>
+    <Layers>
+      <Layer level="BACKGROUND">
+        <Texture name="$parentStripe" setAllPoints="true" file="Interface\GuildFrame\GuildFrame" parentKey="stripe">
+          <TexCoords left="0.36230469" right="0.38183594" top="0.95898438" bottom="0.99804688"/>
+        </Texture>
+      </Layer>
+      <Layer level="BORDER">
+        <Texture name="$parentBarTexture" hidden="true" file="Interface\TargetingFrame\UI-StatusBar" parentKey="barTexture">
+          <Size>
+            <AbsDimension x="10" y="20"/>
+          </Size>
+          <Anchors>
+            <Anchor point="LEFT" x="60" y="0"/>
+          </Anchors>
+          <Color r="0" g="1" b="0" a="0.1"/>
+        </Texture>
+      </Layer>
+      <Layer level="ARTWORK">
+        <FontString name="$parentString1" text="名字" inherits="GameFontHighlightSmall" justifyH="LEFT" wordwrap="false" parentKey="string1">
+          <Size>
+            <AbsDimension x="150" y="10"/>
+          </Size>
+          <Anchors>
+            <Anchor point="LEFT" x="32" y="0"/>
+          </Anchors>
+        </FontString>
+        <FontString name="$parentString2" text="可用" inherits="GameFontHighlightSmall" wordwrap="false" parentKey="string2">
+          <Size>
+            <AbsDimension x="60" y="10"/>
+          </Size>
+          <Anchors>
+            <Anchor relativeTo="$parentString1" relativePoint="RIGHT" point="LEFT" x="0" y="0"/>
+          </Anchors>
+        </FontString>
+        <FontString name="$parentString3" text="总分" inherits="GameFontHighlightSmall" wordwrap="false" parentKey="string3">
+          <Size>
+            <AbsDimension x="60" y="10"/>
+          </Size>
+          <Anchors>
+            <Anchor relativeTo="$parentString2" relativePoint="RIGHT" point="LEFT" x="0" y="0"/>
+          </Anchors>
+        </FontString>
+      </Layer>
+    </Layers>
+    <Frames>
+      <CheckButton name="$parentCheckBox" parentKey="checkButton">
+        <Size x="24" y="24"/>
+        <Anchors>
+          <Anchor point="LEFT" x="3" y="0"/>
+        </Anchors>
+        <Scripts>
+          <OnClick>
+              if CurrentView ~= "EventFrame" then
+                RevertChange()
+              end
+              self:GetParent().data.checked = self:GetChecked()
+              NewFrame.Container.update()
+          </OnClick>
+        </Scripts>
+        <NormalTexture file="Interface\Buttons\UI-CheckBox-Up"/>
+        <PushedTexture file="Interface\Buttons\UI-CheckBox-Down"/>
+        <HighlightTexture file="Interface\Buttons\UI-CheckBox-Highlight" alphaMode="ADD"/>
+        <CheckedTexture file="Interface\Buttons\UI-CheckBox-Check"/>
+        <DisabledCheckedTexture file="Interface\Buttons\UI-CheckBox-Check-Disabled"/>
+        
+      </CheckButton>
+    </Frames>
+    <HighlightTexture file="Interface\FriendsFrame\UI-FriendsFrame-HighlightBar" alphaMode="ADD" setAllPoints="true"/>
+  </Button>
+
+    
  
-    <Frame name="MyPointsFrame" inherits="PortraitFrameTemplate" enableMouse="true" parent="UIParent" hidden="true" toplevel="true">
+    <Frame name="MyPointsFrame" inherits="PortraitFrameTemplate" enableMouse="true"  movable="true" parent="UIParent" hidden="true" toplevel="true">
         <Size x="563" y="428"/>
         <Anchors>
             <Anchor point="TOPLEFT" x="100" y="-84"/>
@@ -444,9 +525,7 @@
                             <Anchor point="BOTTOMLEFT" relativeTo="$parentSelectionDropDown" x="-150" y="6"/>
                         </Anchors>
                         <Scripts>
-                            <OnClick>
-
-                            </OnClick>
+                            <OnClick function="CreateNewRec" />
                         </Scripts>
                     </Button>
 
@@ -458,7 +537,7 @@
                         </Anchors>
                     </Frame>
 
-                      <Frame name="RaidInfoFrame">
+                      <Frame name="RaidInfoFrame" parentKey="RaidInfo">
                           <Size x="338" y="428"/>
                           <Anchors>
                               <Anchor point="TOPLEFT" x="0" y="-56"/>
@@ -482,7 +561,7 @@
                                     <FontString name="$parentCreateTime" parentKey="CreateTimeLabel" inherits="GameFontNormalHuge" justifyH="LEFT">
                                         <Size x="250" y="0"/>
                                         <Anchors>
-                                            <Anchor relativeTo="$parentRaidName" point="TOP" x="0" y="-30"/>
+                                            <Anchor relativeTo="$parentRaidName" point="TOP" x="0" y="-50"/>
                                         </Anchors>
                                     </FontString>
                                     <FontString name="$parentEndTime" parentKey="EndTimeLabel" inherits="GameFontNormalHuge" justifyH="LEFT">
@@ -553,11 +632,14 @@
                                     <Scripts>
                                         <OnEnterPressed function="AnnounceBox_OnTextChanged"/>
                                         <OnTextChanged function="AnnounceBox_OnTextChanged"/>
+                                        <OnLoad>
+                                            self:SetAutoFocus( false );
+                                        </OnLoad>
                                     </Scripts>
                                 </EditBox>
 
 
-                                <EditBox name="$parentAnnounceIntervalBox" inherits="InputBoxTemplate" parentKey="AnnounceIntervalBox" letters="4">
+                                <EditBox name="$parentAnnounceIntervalBox" numeric="true" inherits="InputBoxTemplate" parentKey="AnnounceIntervalBox" letters="4">
                                     <Size x="40" y="20"/>
                                     <Anchors>
                                         <Anchor relativeTo="$parentAutoAnnounce" point="BOTTOMLEFT" x="60" y="-46"/>
@@ -565,6 +647,9 @@
                                     <Scripts>
                                         <OnEnterPressed function="AnnounceIntervalBox_OnTextChanged"/>
                                         <OnTextChanged function="AnnounceIntervalBox_OnTextChanged"/>
+                                        <OnLoad>
+                                            self:SetAutoFocus( false );
+                                        </OnLoad>
                                     </Scripts>
                                 </EditBox>
 
@@ -575,15 +660,13 @@
                       </Frame>
 
 
-                      <Button name="$parentExportButton" inherits="MagicButtonTemplate" text="导出">
+                      <Button name="$parentExportButton" inherits="MagicButtonTemplate" text="结束/保存">
                           <Size x="135" y="22"/>
                           <Anchors>
                               <Anchor point="BOTTOM" x="80" y="4"/>
                           </Anchors>
                           <Scripts>
-                              <OnClick>
-
-                              </OnClick>
+                              <OnClick function="ExportRec" />
                           </Scripts>
                       </Button>
 
@@ -594,9 +677,7 @@
                               <Anchor point="BOTTOM" x="-80" y="4"/>
                           </Anchors>
                           <Scripts>
-                              <OnClick>
-
-                              </OnClick>
+                              <OnClick function="DeleteRec" />
                           </Scripts>
                       </Button>
 
@@ -629,6 +710,261 @@
                     </Scripts>
                 </Frame>
                 <!-- ItemFrame -->
+
+                <Frame name="NewFrame"  inherits="NewEventFrame" hidden="true" >
+                    <Size x="338" y="428"/>
+                    <Anchors>
+                      <Anchor point="TOPLEFT" x="224" y="0"/>
+                    </Anchors>
+
+                    <Layers>
+                      <Layer level="OVERLAY">
+                        <FontString name="$parentHeader" text="手动添加" inherits="GameFontNormalLarge" justifyH="CENTER">
+                          <Size x="80" y="0" />
+                          <Anchors>
+                            <Anchor point="TOP" x="0" y="-30"/>
+                          </Anchors>
+                        </FontString>
+                        <FontString name="$parentName" text="名称" inherits="GameFontNormalLarge" justifyH="LEFT">
+                          <Size x="60" y="0" />
+                          <Anchors>
+                            <Anchor point="TOPLEFT" x="20" y="-50"/>
+                          </Anchors>
+                        </FontString>
+                        <FontString name="$parentPoint" text="分数" inherits="GameFontNormalLarge" justifyH="LEFT">
+                          <Size x="60" y="0" />
+                          <Anchors>
+                            <Anchor relativeTo="$parentName" point="TOPLEFT" x="0" y="-20"/>
+                          </Anchors>
+                        </FontString>
+                      </Layer>
+                    </Layers>
+
+                    <Frames>
+
+                      <EditBox name="$parentEditName" parentKey="name"  inherits="InputBoxTemplate"  letters="64" >
+                        <Size x="200" y="20" />
+                        <Anchors>
+                          <Anchor relativeTo="$parentName" relativePoint="TOPRIGHT" point="TOPLEFT" x="10" y="0"  />
+                        </Anchors>
+
+                      </EditBox>
+
+
+                      <EditBox name="$parentEditPoint" parentKey="point" numeric="true"  inherits="InputBoxTemplate"  letters="4" >
+                        <Size x="200" y="20" />
+                        <Anchors>
+                          <Anchor relativeTo="$parentPoint" relativePoint="TOPRIGHT" point="TOPLEFT" x="10" y="0"  />
+                        </Anchors>
+                      </EditBox>
+
+                      <CheckButton name="$parentSelectAll" inherits="OptionsCheckButtonTemplate" text="所有" >
+                        <Anchors>
+                          <Anchor relativeTo="$parentPoint" point="TOPLEFT" x="-10" y="-20" />
+                        </Anchors>
+                        <HitRectInsets left="0" right="0" />
+                        <Scripts>
+                          <OnLoad>
+                            _G[self:GetName() .. "Text"]:SetText("所有")
+                            if CurrentView == "EventFrame" then
+                              self:Show()
+                            else
+                              self:Hide()
+                            end
+                          </OnLoad>
+                          <OnClick>
+
+                            local data = self:GetParent().Container.data
+                            for i=1,#data do
+                              data[i].checked=true
+                            end
+                            self:GetParent().Container.update()
+                            self:SetChecked(false)
+                          </OnClick>
+                        </Scripts>
+                      </CheckButton>
+
+
+                      <CheckButton name="$parentSelectRaid" inherits="OptionsCheckButtonTemplate" >
+                        <Anchors>
+                          <Anchor relativeTo="$parentSelectAll" point="TOPLEFT" relativePoint="TOPRIGHT"  x="40" y="0" />
+                        </Anchors>
+                        <HitRectInsets left="0" right="0" />
+                        <Scripts>
+                          <OnLoad>
+                            _G[self:GetName() .. "Text"]:SetText("全团")
+                            if CurrentView == "EventFrame" then
+                              self:Show()
+                            else
+                              self:Hide()
+                            end
+                          </OnLoad>
+                          <OnClick>
+                            local buttons = self:GetParent().Container.buttons
+                            print("选择全团")
+                            self:SetChecked(false)
+                          </OnClick>
+                        </Scripts>
+                      </CheckButton>
+
+                      <CheckButton name="$parentSelectOnline" inherits="OptionsCheckButtonTemplate" >
+                        <Anchors>
+                          <Anchor relativeTo="$parentSelectRaid" point="TOPLEFT" relativePoint="TOPRIGHT"  x="40" y="0" />
+                        </Anchors>
+                        <HitRectInsets left="0" right="0" />
+                        <Scripts>
+                          <OnLoad>
+                            _G[self:GetName() .. "Text"]:SetText("在线")
+                            if CurrentView == "EventFrame" then
+                              self:Show()
+                            else
+                              self:Hide()
+                            end
+                          </OnLoad>
+                          <OnClick>
+                            local buttons = self:GetParent().Container.buttons
+                            print("选择在线")
+                            self:SetChecked(false)
+                          </OnClick>
+                        </Scripts>
+                      </CheckButton>
+
+                      <CheckButton name="$parentSelectInverse" inherits="OptionsCheckButtonTemplate" >
+                        <Anchors>
+                          <Anchor relativeTo="$parentSelectOnline" point="TOPLEFT" relativePoint="TOPRIGHT"  x="40" y="0" />
+                        </Anchors>
+                        <HitRectInsets left="0" right="0" />
+                        <Scripts>
+                          <OnLoad>
+                            _G[self:GetName() .. "Text"]:SetText("反选")
+                            if CurrentView == "EventFrame" then
+                              self:Show()
+                            else
+                              self:Hide()
+                            end
+                          </OnLoad>
+                          <OnClick>
+                            local data = self:GetParent().Container.data
+                            for i=1,#data do
+                              data[i].checked=not data[i].checked
+                            end
+                            self:GetParent().Container.update()
+                            self:SetChecked(false)
+                          </OnClick>
+                        </Scripts>
+                      </CheckButton>
+
+                      <Frame name="$parentInset" useParentLevel="true" inherits="InsetFrameTemplate">
+                        <Size x="217" y="496"/>
+                        <Anchors>
+                          <Anchor point="TOPLEFT" x="2" y="-140" />
+                          <Anchor point="BOTTOMRIGHT" x="-4" y="26" />
+                        </Anchors>
+                      </Frame>
+
+                      <Button name="$parentRaidRosterColumnButton0" parentKey="RaidRosterColumnButton1" text="选" inherits="RaidRosterColumnButtonTemplate">
+                        <Anchors>
+                          <Anchor relativeTo="$parentInset" relativePoint="TOPLEFT" point="BOTTOMLEFT">
+                            <Offset>
+                              <AbsDimension x="0" y="0"/>
+                            </Offset>
+                          </Anchor>
+                        </Anchors>
+                        <Scripts>
+                          <OnLoad>
+                            WhoFrameColumn_SetWidth(self,32)
+                          </OnLoad>
+                        </Scripts>
+                      </Button>
+                      <Button name="$parentRaidRosterColumnButton1" parentKey="RaidRosterColumnButton1" text="名字" inherits="RaidRosterColumnButtonTemplate">
+                        <Anchors>
+                          <Anchor point="LEFT" relativeTo="$parentRaidRosterColumnButton0" relativePoint="RIGHT">
+                            <Offset>
+                              <AbsDimension x="-2" y="0"/>
+                            </Offset>
+                          </Anchor>
+                        </Anchors>
+                        <Scripts>
+                          <OnLoad>
+                            WhoFrameColumn_SetWidth(self,150)
+                          </OnLoad>
+                        </Scripts>
+                      </Button>
+                      <Button name="$parentRaidRosterColumnButton2" parentKey="RaidRosterColumnButton2" text="可用" inherits="RaidRosterColumnButtonTemplate">
+                        <Anchors>
+                          <Anchor point="LEFT" relativeTo="$parentRaidRosterColumnButton1" relativePoint="RIGHT">
+                            <Offset>
+                              <AbsDimension x="-2" y="0"/>
+                            </Offset>
+                          </Anchor>
+                        </Anchors>
+                        <Scripts>
+                          <OnLoad>
+                            WhoFrameColumn_SetWidth(self,60)
+                          </OnLoad>
+                        </Scripts>
+                      </Button>
+                      <Button name="$parentRaidRosterColumnButton3" parentKey="RaidRosterColumnButton3" text="状态" inherits="RaidRosterColumnButtonTemplate">
+                        <Anchors>
+                          <Anchor point="LEFT" relativeTo="$parentRaidRosterColumnButton2" relativePoint="RIGHT">
+                            <Offset>
+                              <AbsDimension x="-2" y="0"/>
+                            </Offset>
+                          </Anchor>
+                        </Anchors>
+                        <Scripts>
+                          <OnLoad>
+                            WhoFrameColumn_SetWidth(self,60)
+                          </OnLoad>
+                        </Scripts>
+                      </Button>
+
+                      <ScrollFrame name="$parentContainer" parentKey="Container" inherits="HybridScrollFrameTemplate">
+                        <Anchors>
+                          <Anchor relativeTo="$parentInset" point="TOPLEFT"  x="2" y="-5" />
+                          <Anchor relativeTo="$parentInset" point="BOTTOMRIGHT"  x="0" y="0" />
+                        </Anchors>
+                        <Frames>
+                          <Slider name="$parentScrollBar" parentKey="ScrollBar" inherits="HybridScrollBarTemplate">
+                            <Anchors>
+                              <Anchor point="TOPLEFT" relativePoint="TOPRIGHT">
+                                <Offset>
+                                  <AbsDimension x="-22" y="-12"/>
+                                </Offset>
+                              </Anchor>
+                              <Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT">
+                                <Offset>
+                                  <AbsDimension x="0" y="12"/>
+                                </Offset>
+                              </Anchor>
+                            </Anchors>
+                          </Slider>
+                        </Frames>
+                      </ScrollFrame>
+
+
+                      <Button name="$parentDelteButton" inherits="MagicButtonTemplate" text="确定">
+                        <Size x="135" y="22"/>
+                        <Anchors>
+                          <Anchor point="BOTTOM" x="-80" y="4"/>
+                        </Anchors>
+                        <Scripts>
+                          <OnClick function="NewEvent_Submit" />
+                        </Scripts>
+                      </Button>
+
+
+                      <Button name="$parentNewButton" inherits="MagicButtonTemplate" text="取消">
+                        <Size x="135" y="22"/>
+                        <Anchors>
+                          <Anchor point="BOTTOM" x="80" y="4" />
+                        </Anchors>
+                        <Scripts>
+                          <OnClick function="BackToCurrentView" />
+                        </Scripts>
+                      </Button>
+                    </Frames>
+                  </Frame>
 
                 <Frame name="SettingFrame" hidden="true" >
                   <Size x="338" y="428"/>
@@ -674,6 +1010,10 @@
         </Frames>
       <Scripts>
         <OnEvent function="OnEvent" />
+        <OnHide function="Save"/>
+        <OnLoad>self:RegisterForDrag("LeftButton");</OnLoad>
+         <OnDragStart>self:StartMoving();</OnDragStart>
+         <OnDragStop>self:StopMovingOrSizing();</OnDragStop>
       </Scripts>
       </Frame>
 </Ui>

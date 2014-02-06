@@ -55,7 +55,6 @@ local convert_table = {
 
 
 function OnEvent( self , event , arg1 , arg2 )
-		print(event)
 	if event == "CHAT_MSG_WHISPER" then
 		-- auto invite or lookup the dkp
 		if  (not IsInGroup(LE_PARTY_CATEGORY_HOME) or UnitIsGroupLeader("player")) and string.find(DKP_Options["auto_invite_command"],arg1) then
@@ -94,8 +93,8 @@ function OnEvent( self , event , arg1 , arg2 )
 			local name, rank, subgroup, level, class, fileName, zone, online, isDead, role, isML = GetRaidRosterInfo(index)
 			if CurrentRecord:GetDetails(name) == nil then
 				CurrentRecord:AddMember(name,class)
-		end
 			end
+		end
 	elseif event == "ADDON_LOADED" then
 		-- acquire the options
 		-- or initialize data
@@ -109,9 +108,42 @@ function OnEvent( self , event , arg1 , arg2 )
 		self:RegisterEvent("CHAT_MSG_WHISPER",OnEvent)
 	elseif event == "PLAYER_LOGOUT" then
 		-- save the variable
+		if CurrentRecord:IsClose() then
+			CurrentRecord:Finish()
+		end
+		Save()
 		self:UnregisterEvent("CHAT_MSG_WHISPER",OnEvent)
 	end
 end
+
+function Save( )
+		-- This function copies values from one table into another:
+	local function copyDefaults(src, dst)
+		-- If no source (defaults) is specified, return an empty table:
+		if type(src) ~= "table" then return {} end
+		-- If no target (saved variable) is specified, create a new table:
+		if type(dst) then dst = {} end
+		-- Loop through the source (defaults):
+		for k, v in pairs(src) do
+			-- If the value is a sub-table:
+			if type(v) == "table" then
+				-- Recursively call the function:
+				dst[k] = copyDefaults(v, dst[k])
+			-- Or if the default value type doesn't match the existing value type:
+			elseif type(v) ~= type(dst[k]) then
+				-- Overwrite the existing value with the default one:
+				dst[k] = v
+			end
+		end
+		-- Return the destination table:
+		return dst
+	end
+
+	local new = {}
+	MiDKP3_Config = copyDefaults(MiDKP3_Config,new)
+	print("remember to save options")
+end
+
 
 function initialize()
 	DKP_Options = {
@@ -176,6 +208,7 @@ function initialize()
 		["use_history"] = true,
 		["auto_invite_command"] = "1,组,",
 		["auto_announce"] = "开组啦开组啦,密我1进组",
+		["auto_announce_interval"] = 180,
 		["auto_publish_loots"] = true,
 		["dkp_factors"] ={
 			{
@@ -232,9 +265,8 @@ function FinishRecording(frame)
 end
 
 function StartsWith( str , other )
-	if string.sub (str,1, string.len (other))==other then
-		return
-	end
+	local s,e = strfind(str,other)
+	return s == 1
 end
 
 function VerifyBid( message , sender )
@@ -292,6 +324,12 @@ function StartAuctioning(frame)
 	Auctioning = true
 	frame.RegisterEvent("CHAT_MSG_OFFICER",OnEvent)
 	-- register time callbacks
+    -- create a timer
+    local function onUpdate(self,elapsed)
+         AuctioningTimerCallback()
+     
+    -- local f = CreateFrame("frame")
+    -- f:SetScript("OnUpdate", onUpdate)
 end
 
 function AuctioningTimerCallback()
