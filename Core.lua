@@ -51,10 +51,25 @@ convert_table = {
 
 }
 
+FilterMessageList = {}
+
+function MessageFiliter( self, event, msg, author, ... )
+	for i=1,#FilterMessageList do
+		if FilterMessageList[i] == msg then
+			table.remove(FilterMessageList,i)
+			return true
+		end
+	end
+	return false
+end
+
+function SendWhisper( msg , target )
+	SendChatMessage(msg,"WHISPER",nil,target)
+	table.insert(FilterMessageList,msg)
+end
 
 
 function OnEvent( self , event , arg1 , arg2 )
-	print(event)
 	if event == "CHAT_MSG_WHISPER" then
 		-- auto invite or lookup the dkp
 		if  (not IsInGroup(LE_PARTY_CATEGORY_HOME) or UnitIsGroupLeader("player")) and string.find(DKP_Options["auto_invite_command"],arg1) then
@@ -69,7 +84,7 @@ function OnEvent( self , event , arg1 , arg2 )
 			local players = CurrentRecord:GetPlayersByClass(convert_table[class])
 			for i=1,#players do
 				local name = players[i]
-				SendChatMessage(i .. ":" .. name .. "\t当前可用分数:" .. CurrentRecord:Lookup(name) .. "分","WHISPER",nil,arg2)
+				SendWhisper(i .. ":" .. name .. "\t当前可用分数:" .. CurrentRecord:Lookup(name) .. "分",arg2)
 			end
 		end
 	elseif event == "CHAT_MSG_OFFICER" then
@@ -113,6 +128,7 @@ function OnEvent( self , event , arg1 , arg2 )
 		end
 		self:RegisterEvent("CHAT_MSG_WHISPER",OnEvent)
 		self:RegisterEvent("GROUP_ROSTER_UPDATE",OnEvent)
+		ChatFrame_AddMessageEventFilter("CHAT_MSG_WHISPER_INFORM", MessageFiliter)
 		if DKP_Options["auto_publish_loots"] then
 			self:RegisterEvent("LOOT_OPENED",OnEvent)
 		end
@@ -304,25 +320,25 @@ function GetRecordByName( name )
 	local player = CurrentRecord:GetDetails(name) --- wrong way!
 	if not player then
 		local dkp = CurrentRecord:GetPrevDKP(name)
-		SendChatMessage("您当前的DKP:" .. dkp .. "分","WHISPER",nil,name)
-		SendChatMessage("当前系数为" .. GetFactor(dkp),"WHISPER",nil,name)
+		SendWhisper("您当前的DKP:" .. dkp .. "分",name)
+		SendWhisper("当前系数为" .. GetFactor(dkp),name)
 		return
 	end
-	SendChatMessage("您当前可用的DKP:" .. CurrentRecord:Lookup(name) .. "分","WHISPER",nil,name)
-	SendChatMessage("进团分数:" .. player.previous .."分，" .. "当前系数为:" .. player.factor,"WHISPER",nil,name)
-	SendChatMessage("本次活动总共获得" .. player.gain .. "分","WHISPER",nil,name)
+	SendWhisper("您当前可用的DKP:" .. CurrentRecord:Lookup(name) .. "分",name)
+	SendWhisper("进团分数:" .. player.previous .."分，" .. "当前系数为:" .. player.factor,name)
+	SendWhisper("本次活动总共获得" .. player.gain .. "分",name)
 	local count = 1
 	for id,e in pairs(player.events) do
-		SendChatMessage(count .. ":" ..e.name .. "--" .. e.point .."分" ,"WHISPER",nil,name)
+		SendWhisper(count .. ":" ..e.name .. "--" .. e.point .."分" ,name)
 		count = count + 1
 	end
-	SendChatMessage("本次活动物品总共花费" ..player.cost .. "分","WHISPER",nil,name)
+	SendWhisper("本次活动物品总共花费" ..player.cost .. "分",name)
 	count = 1
 	for id,item in pairs(player.loots) do
-		SendChatMessage( count .. ":" ..item.name .. "--" .. item.point .."分","WHISPER",nil,name)
+		SendWhisper( count .. ":" ..item.name .. "--" .. item.point .."分",name)
 		count = count + 1
 	end	
-	SendChatMessage("活动结束后,你的分数为:" .. player.previous - player.cost + player.gain * player.factor .."分","WHISPER",nil,name)
+	SendWhisper("活动结束后,你的分数为:" .. player.previous - player.cost + player.gain * player.factor .."分",name)
 end
 
 function LootAllItems()
