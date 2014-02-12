@@ -2,7 +2,6 @@
 -- SavedVariables: DKP_Options
 
 CurrentRecord = nil
-LootItemList = {}
 
 convert_table = {
 	["Hunter"] = "Hunter",
@@ -67,15 +66,16 @@ end
 function RegisterEvent( event , callback )
 	if not EventList[event] then
 		EventList[event] = {}
-		MyPointsFrame:RegisterEvent(event,OnEvent)
+		MyPointsFrame:RegisterEvent(event)
 	end
-
-	table.insert(EventList,callback)
+	if not tContains(EventList[event],callback) then
+		table.insert(EventList[event],callback)
+	end
 end
 
 function UnregisterEvent( event , callback )
 	local list = EventList[events]
-	if not list then
+	if list then
 		for i=1,#list do
 			if list[i] == callback then
 				table.remove(list,i)
@@ -160,20 +160,24 @@ end
 
 function OnLootingItems()
 	-- publish the items
-	if DKP_Options["auto_publish_loots"] then
-		for slot=1,GetNumLootItems() do
-			if GetLootSlotType(slot) == LOOT_SLOT_ITEM  then
-				local link = GetLootSlotLink(slot)
-				local name, link, quality, iLevel  = GetItemInfo(slot)
-				if quality >= DKP_Options["item_quality"] and iLevel >= DKP_Options["item_level"] then
-					table.insert(LootItemList,link)
+	for slot=1,GetNumLootItems() do
+		if GetLootSlotType(slot) == LOOT_SLOT_ITEM  then
+			local link = GetLootSlotLink(slot)
+			local _, _, quality, iLevel  = GetItemInfo(link)
+			if quality >= DKP_Options["item_quality"] and iLevel >= DKP_Options["item_level"] then
+				table.insert(CurrentRecord:GetLootItems(),link)
+				if DKP_Options["auto_publish_loots"] then
 					SendChatMessage(link,"RAID")
 				end
 			end
 		end
 	end
 
-	AuctionFrame:Show()
+	if AuctionFrame:IsShown() then
+		AuctionFrame_UpdateList()
+	else
+		AuctionFrame:Show()
+	end
 	-- and popup the auction frame
 end
 
@@ -225,9 +229,7 @@ function OnAddonLoaded()
 	end
 
 	ChatFrame_AddMessageEventFilter("CHAT_MSG_WHISPER_INFORM", MessageFiliter)
-	if DKP_Options["auto_publish_loots"] then
-		RegisterEvent("LOOT_OPENED",OnLootingItems)
-	end
+	RegisterEvent("LOOT_OPENED",OnLootingItems)
 	-- if  IsInRaid() then
 	-- 	for i=1,GetNumGroupMembers() do
 	-- 		local name, rank, subgroup, level, class, fileName, zone, online, isDead, role, isML = GetRaidRosterInfo(i)
@@ -314,7 +316,7 @@ function initialize()
 		["item_level"] = 551,
 		["item_quality"] = 3,
 		["item_auction_timelimit"] = -1,
-		["item_auction_countdown_after_slience"] = 10 , -- count down after 10-second-silence
+		["item_auction_countdown_after_slience"] = 30 , -- count down after 10-second-silence
 
 
 		["hide_whisper_reply"] = true,		

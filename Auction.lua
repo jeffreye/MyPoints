@@ -1,5 +1,5 @@
 robot_flag = "~:"
-last_bid = { looter = "无人" , bid = 0 , time = 0 } -- time
+last_bid = { looter = "无人" , bid = 0 , time = 0 ,item = "" } -- time
 
 Auctioning = false
 countdown = -1
@@ -27,7 +27,7 @@ function AuctionFrame_OnLoad( self )
             if countdown == 0 then
                 SendChatMessage(robot_flag .. "禁止出分","OFFICER")
                 countdown = countdown - 1
-                FinishAuction(frame)
+                FinishAuction()
                 return
             elseif countdown ~= -1 then
                 SendChatMessage(robot_flag ..tostring(countdown),"OFFICER")
@@ -46,9 +46,9 @@ end
 
 function AuctionFrame_OnShow( self )    
     -- update list
-    local scrollFrame = self.Container
+    local scrollFrame = AuctionFrame.Container
     scrollFrame.ScrollBar.doNotHide = true
-    HybridScrollFrame_CreateButtons(scrollFrame, "AuctionItemButtonTemplate", 0, 0, "TOPLEFT", "TOPLEFT", 0, -SCROLLFRAME_BUTTON_OFFSET, "TOP", "BOTTOM")
+    HybridScrollFrame_CreateButtons(scrollFrame, "AuctionItemButtonTemplate", 0, 0, "TOPLEFT", "TOPLEFT", 0, 0, "TOP", "BOTTOM")
     scrollFrame.update = AuctionFrame_UpdateList
     scrollFrame.update()
 end
@@ -57,6 +57,7 @@ function AuctionFrame_UpdateList()
     local scrollFrame = AuctionFrame.Container
     local offset = HybridScrollFrame_GetOffset(scrollFrame)
     local buttons = scrollFrame.buttons
+    local LootItemList = CurrentRecord:GetLootItems()
     local count = #LootItemList
     for i=1,#buttons do
         local btn = buttons[i]
@@ -71,9 +72,10 @@ function AuctionFrame_UpdateList()
             text:SetText(name)
             text:SetVertexColor(color.r, color.g, color.b);
             btn.icon:SetTexture(texture);
-            SetItemButtonNameFrameVertexColor(button, 0.5, 0.5, 0.5);
-            SetItemButtonTextureVertexColor(button, 1.0, 1.0, 1.0);
-            SetItemButtonNormalTextureVertexColor(button, 1.0, 1.0, 1.0);
+            SetItemButtonNameFrameVertexColor(btn, 0.5, 0.5, 0.5);
+            SetItemButtonTextureVertexColor(btn, 1.0, 1.0, 1.0);
+            SetItemButtonNormalTextureVertexColor(btn, 1.0, 1.0, 1.0);
+            btn:Show()
         end
     end
 
@@ -88,19 +90,18 @@ function StartAuction(frame)
     RegisterEvent("CHAT_MSG_OFFICER",VerifyBid)
     -- register time callbacks
     -- create a timer
-    last_bid = { looter = "无人" , bid = 0 , time =  time() } 
+    last_bid = { looter = "无人" , bid = 0 , time =  time() , item = frame:GetParent().itemLink } 
 end
 
 function FinishAuction( frame )
     Auctioning = false
     UnregisterEvent("CHAT_MSG_OFFICER",VerifyBid)
-    frame:SetScript("onUpdate", nil)
-    local item = frame:GetParent().itemLink
+    local item = last_bid.item
     local str = ""
     if last_bid.bid == 0 then
         str = "没人出分,装备又烂了╮(╯▽╰)╭  "
     else
-        str = last_bid.looter .. "获得" .. last_bid.bid .. "分"
+        str = last_bid.looter .. "获得" .. tostring(last_bid.bid) .. "分"
         CurrentRecord:Loot(item,last_bid.looter,las.bid)
         RemoveAuction(frame)
     end
@@ -108,13 +109,7 @@ function FinishAuction( frame )
 end
 
 function RemoveAuction( frame )
-    local item = frame:GetParent().itemLink
-    for i=1,#LootItemList do
-        if LootItemList[i] == item then
-            table.remove(LootItemList,i)
-            break
-        end
-    end
+    CurrentRecord:RemovePendingItem(last_bid.item)
     AuctionFrame.Container.update()
 end
 
@@ -142,18 +137,27 @@ function VerifyBid(frame , event , message , sender )
         return
     end
 
+    local bid = 0
+
     if string.match(message,"%d") then
-        local bid = tonumber(message)
-        if CurrentRecord:Lookup(sender) > bid then
-            SendChatMessage(robot_flag.."亲,好像你的分数不够喔~","OFFICER")
-        elseif bid <= 0 then
-            SendChatMessage(robot_flag.."这么点分就想拿东西,太天真了~","OFFICER")
-        else
-            last_bid.looter = sender
-            last_bid.bid = bid
-            last_bid.time = time()
-        end
+        bid = tonumber(message)
+    elseif message == "SH" then
+        SendChatMessage(robot_flag .. sender .."出" .. tostring(CurrentRecord:Lookup(sender)) .. "分","OFFICER")
+        bid = CurrentRecord:Lookup(sender)
+    elseif message == "P" then
+        return
     else 
         SendChatMessage(robot_flag.."你真的是在出分吗?别闹~","OFFICER")
+        return
+    end
+
+    if bid < 30 or bid < last_bid.bid then
+        SendChatMessage(robot_flag.."这么点分就想拿东西,太天真了~","OFFICER")
+    elseif CurrentRecord:Lookup(sender) < bid then
+        SendChatMessage(robot_flag.."亲,好像你的分数没那么多喔~","OFFICER")
+    else
+        last_bid.looter = sender
+        last_bid.bid = bid
+        last_bid.time = time()
     end
 end

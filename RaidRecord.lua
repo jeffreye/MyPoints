@@ -78,6 +78,10 @@ function RaidRecord:Read( dkpData )
 		obj.endtime = nil
 	end
 
+	if not dkpData.PendingItems then
+		dkpData.PendingItems = {}
+	end
+
 	self.__index=self
 	local record=setmetatable(obj,self)
 
@@ -135,7 +139,8 @@ function RaidRecord:new( record_name , dkp_name )
 			["active"] = false,
 			["status"] = 1,
 			["zones"] = {},
-			["entities"] = {}
+			["entities"] = {},
+			PendingItems = {}
 		} 
 
 	MiDKP3_Config["raids"][saveVar.id] = saveVar -- update the var on account's profile
@@ -218,11 +223,12 @@ function RaidRecord:AddEvent( eventName , playerList , eventPoint )
 end
 
 function RaidRecord:Loot( itemName , looter ,eventPoint)
+	local player = self:GetMemberId(looter)
 	local item =  {
 		["type"] = TYPE_ITEM,
 		["point"] = eventPoint,
 		["ctime"] = CurrentTime(),
-		["player"] = self:GetMemberId(looter),
+		["player"] = player,
 		["name"] = itemName,
 	}
 	table.insert(self.loots,item)
@@ -231,7 +237,7 @@ function RaidRecord:Loot( itemName , looter ,eventPoint)
 	item.entityId = #self.saveVar["entities"]
 
 	--update members' cost point
-	self.cost[looter] = self.cost[looter] + eventPoint
+	self.cost[player] = self.cost[player] + eventPoint
 	self:RaiseDataChangedEvent(item,TYPE_ITEM,CHANGE_TYPE_ADD)
 	return item
 end
@@ -276,6 +282,9 @@ end
 function RaidRecord:Lookup( memberName )
 	local prev = self:GetPrevDKP(memberName)
 	local details = self:GetDetails(memberName)
+	if not details then
+		return 0
+	end
 	return prev - self.cost[details.id]
 end
 
@@ -381,4 +390,18 @@ function RaidRecord:Finish()
 
 	-- export to xml
 	MiDKP.OO.Raid:Load(self.saveVar.id):SaveAll()
+end
+
+function RaidRecord:RemovePendingItem( item )
+	local LootItemList = self.saveVar.PendingItems
+    for i=1,#LootItemList do
+        if LootItemList[i] == item then
+            table.remove(LootItemList,i)
+            break
+        end
+    end
+end
+
+function RaidRecord:GetLootItems()
+	return self.saveVar.PendingItems
 end
