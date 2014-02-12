@@ -9,6 +9,10 @@ TYPE_PLAYER = "Member"
 TYPE_ITEM = "Item"
 TYPE_EVENT = "Event"
 
+CHANGE_TYPE_MODIFY = "MODIFY"
+CHANGE_TYPE_REMOVE ="REMOVE"
+CHANGE_TYPE_ADD = "ADD"
+
 function CurrentTime()
 	return { date("%Y.%m.%d %H:%M"),time() }--DO NOT USE 2nd element,it's a fake value
 end
@@ -38,7 +42,7 @@ function GetRawRecords()
 end
 
 function RaidRecord:Default()
-	local record_name = "选择"
+	local record_name = ""
 	local dkp_name = MiDKPData["dkp"][1]["name"]
 	local obj={ name=record_name ,createtime = CurrentTime()[1] ,endtime = nil , members={} , events={} , loots={} , gain = {} , cost ={},
 	 saveVar = {
@@ -117,6 +121,10 @@ function RaidRecord:Read( dkpData )
 end
 
 function RaidRecord:new( record_name , dkp_name )
+	if record_name == "" then
+		print("error:record_name cannot be empty")
+		return
+	end
 	local saveVar = {
 	 		["id"] =  MiDKP.OO.Entity:GenerateID(),
 			["name"] = record_name or "团队活动" .. CurrentTime()[1],
@@ -138,6 +146,10 @@ function RaidRecord:Delete()
 	MiDKP3_Config["raids"][self.saveVar.id] = nil
 end
 
+function RaidRecord:IsDefault()
+	return self.name == ""
+end
+
 function RaidRecord:IsClose()
 	return self.endtime
 end
@@ -145,6 +157,21 @@ end
 --the id in saveVar (Backward compatibility)
 function RaidRecord:GetMemberId( index )
 	return self.idTable[index] or index
+end
+
+-- only support add/remove event
+function RaidRecord:RegisterDataChangedEvent( callback )
+	DataChangedEvent = callback
+end
+
+function RaidRecord:RaiseDataChangedEvent(data,type,change_type)
+	if DataChangedEvent then
+		DataChangedEvent(data,type,change_type)
+	end
+end
+
+function RaidRecord:UnregisterDataChangedEvent(  )
+	DataChangedEvent = nil
 end
 
 function RaidRecord:AddMember( memberName , className )
@@ -161,6 +188,9 @@ function RaidRecord:AddMember( memberName , className )
 
 	self.gain[member["id"]] = 0
 	self.cost[member["id"]] = 0
+
+	self:RaiseDataChangedEvent(member,TYPE_PLAYER,CHANGE_TYPE_ADD)
+
 	return member
 end
 
@@ -183,6 +213,7 @@ function RaidRecord:AddEvent( eventName , playerList , eventPoint )
 	event.id = #self.events
 	event.entityId = #self.saveVar.entities
 
+	self:RaiseDataChangedEvent(event,TYPE_EVENT,CHANGE_TYPE_ADD)
 	return event
 end
 
@@ -201,6 +232,7 @@ function RaidRecord:Loot( itemName , looter ,eventPoint)
 
 	--update members' cost point
 	self.cost[looter] = self.cost[looter] + eventPoint
+	self:RaiseDataChangedEvent(item,TYPE_ITEM,CHANGE_TYPE_ADD)
 	return item
 end
 
@@ -284,19 +316,19 @@ function RaidRecord:RemoveByName( index , content_type)
 		[TYPE_PLAYER] = self.members
 	}
 	local data = mapping[content_type][index]
-	local key = nil
-	for k,v in pairs(self.saveVar.entities) do
-		if v == data then
-			key = k
-			break
-		end
+	if data == nil then
+		print("error:data not found")
+		return
 	end
+
+	local key = data.entityId
 	if type(key) == "number" then
 		table.remove(self.saveVar["entities"],key)
 	else
 		self.saveVar["entities"][key] = nil
 	end
 	table.remove(mapping[content_type],index)
+	self:RaiseDataChangedEvent(data,content_type,CHANGE_TYPE_REMOVE)
 end
 
 function RaidRecord:Finish()

@@ -17,7 +17,8 @@ local groupFrames ={ OverviewFrame , MemberFrame , EventFrame , ItemFrame , Sett
 if MyPointsFrame then
     MyPointsFrame:RegisterEvent("ADDON_LOADED")
     MyPointsFrame:RegisterEvent("PLAYER_LOGOUT")
-    groupFrames = { OverviewFrame , MemberFrame , EventFrame , ItemFrame , SettingFrame }
+    MyPointsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+    MyPointsFrame:RegisterEvent("CHAT_MSG_WHISPER")
 end
 
 local lang_convert = {
@@ -74,6 +75,7 @@ function TabsFrame_OnLoad( self )
     SetPortraitToTexture(MyPointsFrame.portrait, "Interface\\FriendsFrame\\FriendsFrameScrollIcon")
 
     
+    groupFrames = { OverviewFrame , MemberFrame , EventFrame , ItemFrame , SettingFrame }
 
     -- create a timer
     local total = 0 
@@ -89,7 +91,7 @@ function TabsFrame_OnLoad( self )
         end
     end
      
-    CreateTimer("OnUpdate", onUpdate)
+    CreateTimer(onUpdate)
 
     --need to support chatframe
     hooksecurefunc("HandleModifiedItemClick", OnModifiedClickItem)
@@ -348,7 +350,11 @@ function NewEvent(self,modifyData)
         NewFrame.name:SetText(modifyData.name)
         NewFrame.point:SetNumber(modifyData.point)
         for k,v in pairs(scrollFrame.data) do
-            v.checked = v.id == modifyData.player or tContains(modifyData.players,v.id)
+            if modifyData.player then                       
+                v.checked = v.id == modifyData.player
+            else
+                v.checked = tContains(modifyData.players,v.id)
+            end
         end
     end
 
@@ -389,7 +395,6 @@ end
 function BackToCurrentView()
     -- I use a copy of data,thus it's unnecessary to revert
     --RevertChange()
-    Save()
     NewFrame:Hide()
     _G[CurrentView]:Show()
 end
@@ -420,19 +425,23 @@ function NewEvent_Submit(  )
         end
     end
 
+
+
     if IsModify then
         IsModify = false
+        local modifyData = nil
         if CurrentView == "EventFrame" then
-            local modifyData = CurrentRecord.events[NewFrame.id]      
+            modifyData = CurrentRecord.events[NewFrame.id]      
             modifyData.name = name
             modifyData.point = point
             modifyData.players = players
         elseif CurrentView == "ItemFrame" then
-            local modifyData = CurrentRecord.loots[NewFrame.id]      
+            modifyData = CurrentRecord.loots[NewFrame.id]      
             modifyData.name = name
             modifyData.point = point
             modifyData.player = players[1]        
         end
+        CurrentRecord:RaiseDataChangedEvent(modifyData,modifyData.type,CHANGE_TYPE_MODIFY)
     else
         if CurrentView == "EventFrame" then
             CurrentRecord:AddEvent(name,players,point)
@@ -441,14 +450,6 @@ function NewEvent_Submit(  )
         end
     end
     BackToCurrentView()
-end
-
-function SelectItem( btn )
-    if Selected then
-        Selected:UnlockHighlight()
-    end
-    btn:LockHighlight()
-    Selected = btn
 end
 
 function ModifyItem( btn )
@@ -461,8 +462,6 @@ function ModifyItem( btn )
     _G[CurrentView].Container.update()
 end
 
-
-
 function DeleteItem( btn )
     local typeMapping = {
         ["MemberFrame"] = TYPE_PLAYER,
@@ -470,9 +469,16 @@ function DeleteItem( btn )
         ["EventFrame"] = TYPE_EVENT,
     }
     CurrentRecord:RemoveByName(Selected.id,typeMapping[CurrentView])
-    Save()
     --refresh data
     _G[CurrentView].Container.update()
+end
+
+function SelectItem( btn )
+    if Selected then
+        Selected:UnlockHighlight()
+    end
+    btn:LockHighlight()
+    Selected = btn
 end
 
 function CreateNewRec( )

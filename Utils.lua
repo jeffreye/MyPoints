@@ -15,7 +15,10 @@ end
     -- This function copies values from one table into another:
 function DeepCopy(src, dst)
     -- If no source (defaults) is specified, return an empty table:
-    if type(src) ~= "table" then return dst = src end
+    if type(src) ~= "table" then
+        dst = src
+        return dst
+    end
     -- If no target (saved variable) is specified, create a new table:
     if type(dst) then dst = {} end
     -- Loop through the source (defaults):

@@ -1,3 +1,9 @@
+robot_flag = "~:"
+last_bid = { looter = "无人" , bid = 0 , time = 0 } -- time
+
+Auctioning = false
+countdown = -1
+
 
 function AuctionFrame_OnLoad( self )
     tinsert(UISpecialFrames, self:GetName());
@@ -7,6 +13,9 @@ function AuctionFrame_OnLoad( self )
 
     local total =  0
     local function AuctioningTimerCallback(frame , elapsed)
+        if not Auctioning then 
+            return
+        end
         total = total + elapsed
         if total < 1 then
             return
@@ -32,7 +41,7 @@ function AuctionFrame_OnLoad( self )
             countdown = -1
         end
     end
-    CreateTimer("OnUpdate",AuctioningTimerCallback)
+    CreateTimer(AuctioningTimerCallback)
 end
 
 function AuctionFrame_OnShow( self )    
@@ -73,13 +82,10 @@ function AuctionFrame_UpdateList()
     HybridScrollFrame_Update(scrollFrame, totalHeight, displayedHeight)
 end
 
-Auctioning = false
-countdown = -1
-
 function StartAuction(frame)
     Auctioning = true
     SendChatMessage(robot_flag .. frame:GetParent().itemLink.."30,开始出分","OFFICER")
-    frame:RegisterEvent("CHAT_MSG_OFFICER",OnEvent)
+    RegisterEvent("CHAT_MSG_OFFICER",VerifyBid)
     -- register time callbacks
     -- create a timer
     last_bid = { looter = "无人" , bid = 0 , time =  time() } 
@@ -87,7 +93,7 @@ end
 
 function FinishAuction( frame )
     Auctioning = false
-    frame:UnregisterEvent("CHAT_MSG_OFFICER")
+    UnregisterEvent("CHAT_MSG_OFFICER",VerifyBid)
     frame:SetScript("onUpdate", nil)
     local item = frame:GetParent().itemLink
     local str = ""
@@ -127,5 +133,27 @@ end
 function AuctionItem_Click( btn )
      if ( IsModifiedClick() ) then
         HandleModifiedItemClick(btn.itemLink)
+    end
+end
+
+
+function VerifyBid(frame , event , message , sender )
+    if not Auctioning or StartsWith(message,robot_flag) then
+        return
+    end
+
+    if string.match(message,"%d") then
+        local bid = tonumber(message)
+        if CurrentRecord:Lookup(sender) > bid then
+            SendChatMessage(robot_flag.."亲,好像你的分数不够喔~","OFFICER")
+        elseif bid <= 0 then
+            SendChatMessage(robot_flag.."这么点分就想拿东西,太天真了~","OFFICER")
+        else
+            last_bid.looter = sender
+            last_bid.bid = bid
+            last_bid.time = time()
+        end
+    else 
+        SendChatMessage(robot_flag.."你真的是在出分吗?别闹~","OFFICER")
     end
 end

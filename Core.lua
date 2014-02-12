@@ -4,9 +4,6 @@
 CurrentRecord = nil
 LootItemList = {}
 
-robot_flag = "~:"
-last_bid = { looter = "无人" , bid = 0 , time = 0 } -- time
-
 convert_table = {
 	["Hunter"] = "Hunter",
 	["Warrior"] = "Warrior",
@@ -51,18 +48,46 @@ convert_table = {
 
 }
 
-EventList = {}
+EventList = {
+	["ADDON_LOADED"] = {OnAddonLoaded},
+	["PLAYER_LOGOUT"] ={OnPlayerLogout},
+	["CHAT_MSG_WHISPER"] = {ProcessDKPWhisper,ProcessAutoInvite},
+	["GROUP_ROSTER_UPDATE"] = {OnRosterUpdate},
+}
 
-function OnEvent( self , event , arg1 , arg2 , ... )
+function OnEvent(  frame , event , arg1 , arg2 ,arg3 , arg4 ,arg5 ,arg6,arg7,arg8,arg9,arg10,arg11 , arg12 ,arg13 , arg14 ,arg15 ,arg16,arg17,arg18)	
+	print(event)
 	if EventList[event] then
 		for _,e in pairs(EventList[event]) do
-			e(self,event,unpack(arg))	
+				e( frame , event , arg1 , arg2 ,arg3 , arg4 ,arg5 ,arg6,arg7,arg8,arg9,arg10,arg11 , arg12 ,arg13 , arg14 ,arg15 ,arg16,arg17,arg18)	
+		end
+	end
+end
+
+function RegisterEvent( event , callback )
+	if not EventList[event] then
+		EventList[event] = {}
+		MyPointsFrame:RegisterEvent(event,OnEvent)
+	end
+
+	table.insert(EventList,callback)
+end
+
+function UnregisterEvent( event , callback )
+	local list = EventList[events]
+	if not list then
+		for i=1,#list do
+			if list[i] == callback then
+				table.remove(list,i)
+				return
+			end
 		end
 	end
 end
 
 function CreateTimer( triggerFunc )
-    CreateFrame("frame"):SetScript("OnUpdate",triggerFunc)
+	local f =  CreateFrame("frame")
+  	f:SetScript("OnUpdate",triggerFunc)
 end
 
 FilterMessageList = {}
@@ -139,8 +164,11 @@ function OnLootingItems()
 		for slot=1,GetNumLootItems() do
 			if GetLootSlotType(slot) == LOOT_SLOT_ITEM  then
 				local link = GetLootSlotLink(slot)
-				table.insert(LootItemList,link)
-				SendChatMessage(link,"RAID")
+				local name, link, quality, iLevel  = GetItemInfo(slot)
+				if quality >= DKP_Options["item_quality"] and iLevel >= DKP_Options["item_level"] then
+					table.insert(LootItemList,link)
+					SendChatMessage(link,"RAID")
+				end
 			end
 		end
 	end
@@ -161,6 +189,28 @@ function OnRosterUpdate()
 	end
 end
 
+function OnRecordChanged( data , content_type , change_type )
+    local strMaping = {
+        ["MemberFrame"] = "玩家",
+        ["ItemFrame"] = "物品拾取",
+        ["EventFrame"] = "事件",        
+    }
+
+    Save()
+
+	if content_type ~= TYPE_EVENT then
+		return
+	end
+
+	if content_type == TYPE_EVENT then
+		if change_type == CHANGE_TYPE_REMOVE then
+	   		SendChatMessage("新增"..strMaping[CurrentView].."(".. data.name .."),分数为:"..data.point .. ",人数:"..#data.players,"RAID")
+		else
+	   		SendChatMessage(strMaping[CurrentView].."(".. data.name ..")更新,分数为:"..data.point .. ",人数:"..#data.players,"RAID")
+	   	end
+	end
+end
+
 function OnAddonLoaded()
 	-- acquire the options
 	-- or initialize data
@@ -168,14 +218,15 @@ function OnAddonLoaded()
         CurrentRecord = DefaultRaidRecord()
     end
 
+    CurrentRecord:RegisterDataChangedEvent(OnRecordChanged)
+
 	if not DKP_Options  then
 		initialize()
 	end
-	self:RegisterEvent("CHAT_MSG_WHISPER",OnEvent)
-	self:RegisterEvent("GROUP_ROSTER_UPDATE",OnEvent)
+
 	ChatFrame_AddMessageEventFilter("CHAT_MSG_WHISPER_INFORM", MessageFiliter)
 	if DKP_Options["auto_publish_loots"] then
-		self:RegisterEvent("LOOT_OPENED",OnEvent)
+		RegisterEvent("LOOT_OPENED",OnLootingItems)
 	end
 	-- if  IsInRaid() then
 	-- 	for i=1,GetNumGroupMembers() do
@@ -199,27 +250,6 @@ function Save( )
 	local new = {}
 	MiDKP3_Config = DeepCopy(MiDKP3_Config,new)
 	print("remember to save options")
-end
-
-function VerifyBid( message , sender )
-	if not Auctioning or StartsWith(message,robot_flag) then
-		return
-	end
-
-	if string.match(message,"%d") then
-		local bid = tonumber(message)
-		if CurrentRecord:Lookup(sender) > bid then
-			SendChatMessage(robot_flag.."亲,好像你的分数不够喔~","OFFICER")
-		elseif bid <= 0 then
-			SendChatMessage(robot_flag.."这么点分就想拿东西,太天真了~","OFFICER")
-		else
-			last_bid.looter = sender
-			last_bid.bid = bid
-			last_bid.time = time()
-		end
-	else 
-		SendChatMessage(robot_flag.."你真的是在出分吗?别闹~","OFFICER")
-	end
 end
 
 function GetFactor( dkp )
@@ -295,6 +325,7 @@ function initialize()
 			true, -- [2]
 			true, -- [3]
 		},
+		["announce_data_changed"] = true,
 		["announce_to_channel"] = 1,
 		["use_history"] = true,
 		["auto_invite_command"] = "1,组,",
