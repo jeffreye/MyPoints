@@ -916,20 +916,15 @@
                         </Anchors>
                       </EditBox>
 
-                      <CheckButton name="$parentSelectAll" inherits="OptionsCheckButtonTemplate" text="所有" >
+                      <CheckButton name="$parentSelectAll" parentKey="selectall" inherits="OptionsCheckButtonTemplate" text="所有" >
                         <Anchors>
                           <Anchor relativeTo="$parentPoint" point="TOPLEFT" x="-10" y="-20" />
                         </Anchors>
                         <HitRectInsets left="0" right="0" />
                         <Scripts>
-                          <OnLoad>
+                          <OnShow>
                             _G[self:GetName() .. "Text"]:SetText("所有")
-                            if CurrentView ~= "ItemFrame" then
-                              self:Show()
-                            else
-                              self:Hide()
-                            end
-                          </OnLoad>
+                          </OnShow>
                           <OnClick>
 
                             local data = self:GetParent().Container.data
@@ -943,64 +938,55 @@
                       </CheckButton>
 
 
-                      <CheckButton name="$parentSelectRaid" inherits="OptionsCheckButtonTemplate" >
+                      <CheckButton name="$parentSelectRaid"  parentKey="selectraid" inherits="OptionsCheckButtonTemplate" >
                         <Anchors>
                           <Anchor relativeTo="$parentSelectAll" point="TOPLEFT" relativePoint="TOPRIGHT"  x="40" y="0" />
                         </Anchors>
                         <HitRectInsets left="0" right="0" />
                         <Scripts>
-                          <OnLoad>
+                          <OnShow>
                             _G[self:GetName() .. "Text"]:SetText("全团")
-                            if CurrentView ~= "ItemFrame" then
-                              self:Show()
-                            else
-                              self:Hide()
-                            end
-                          </OnLoad>
+                          </OnShow>
                           <OnClick>
-                            local buttons = self:GetParent().Container.buttons
-                            print("选择全团")
+                            local data = self:GetParent().Container.data
+                            for i=1,#data do
+                              data[i].checked=UnitInRaid(data[i].name)
+                            end
+                            self:GetParent().Container.update()
                             self:SetChecked(false)
                           </OnClick>
                         </Scripts>
                       </CheckButton>
 
-                      <CheckButton name="$parentSelectOnline" inherits="OptionsCheckButtonTemplate" >
+                      <CheckButton name="$parentSelectOnline"  parentKey="selectonline" inherits="OptionsCheckButtonTemplate" >
                         <Anchors>
                           <Anchor relativeTo="$parentSelectRaid" point="TOPLEFT" relativePoint="TOPRIGHT"  x="40" y="0" />
                         </Anchors>
                         <HitRectInsets left="0" right="0" />
                         <Scripts>
-                          <OnLoad>
+                          <OnShow>
                             _G[self:GetName() .. "Text"]:SetText("在线")
-                            if CurrentView ~= "ItemFrame" then
-                              self:Show()
-                            else
-                              self:Hide()
-                            end
-                          </OnLoad>
+                          </OnShow>
                           <OnClick>
-                            local buttons = self:GetParent().Container.buttons
-                            print("选择在线")
+                            local data = self:GetParent().Container.data
+                            for i=1,#data do
+                            data[i].checked=UnitIsConnected(data[i].name)
+                            end
+                            self:GetParent().Container.update()
                             self:SetChecked(false)
                           </OnClick>
                         </Scripts>
                       </CheckButton>
 
-                      <CheckButton name="$parentSelectInverse" inherits="OptionsCheckButtonTemplate" >
+                      <CheckButton name="$parentSelectInverse" parentKey="selectinverse"  inherits="OptionsCheckButtonTemplate" >
                         <Anchors>
                           <Anchor relativeTo="$parentSelectOnline" point="TOPLEFT" relativePoint="TOPRIGHT"  x="40" y="0" />
                         </Anchors>
                         <HitRectInsets left="0" right="0" />
                         <Scripts>
-                          <OnLoad>
+                          <OnShow>
                             _G[self:GetName() .. "Text"]:SetText("反选")
-                            if CurrentView ~= "ItemFrame" then
-                              self:Show()
-                            else
-                              self:Hide()
-                            end
-                          </OnLoad>
+                          </OnShow>
                           <OnClick>
                             local data = self:GetParent().Container.data
                             for i=1,#data do
@@ -1129,6 +1115,150 @@
                   <Anchors>
                       <Anchor point="TOPLEFT" x="224" y="0"/>
                   </Anchors>
+                  <Frames>
+
+                    <Frame name="$parentInset" useParentLevel="true" hidden="false" inherits="InsetFrameTemplate">
+                      <Size x="217" y="496"/>
+                      <Anchors>
+                        <Anchor point="TOPLEFT" x="2" y="-56" />
+                        <Anchor point="BOTTOMRIGHT" x="-4" y="26" />
+                      </Anchors>
+                    </Frame>
+                    
+                    <ScrollFrame name="$parentContainer" parentKey="Container">
+                      <Anchors>
+                        <Anchor relativeTo="$parentInset" point="TOPLEFT"  x="2" y="-5" />
+                        <Anchor relativeTo="$parentInset" point="BOTTOMRIGHT"  x="0" y="0" />
+                      </Anchors>
+                      <ScrollChild>
+                        <Frame setAllPoints="true">
+                          <Size x="300" y="800" />
+                          <Frames>
+
+
+                            <EditBox name="$parentWhisper" autoFocus="false" inherits="InputBoxTemplate">
+                              <Size x="100" y="30" />
+                              <Anchors>
+                                <Anchor point="TOPLEFT" x="150" y="-0" />
+                              </Anchors>
+                              <Layers>
+                                <Layer level="OVERLAY">
+                                  <FontString text="DKP密语:" inherits="GameFontNormal"  justifyH="LEFT">
+                                    <Anchors>
+                                      <Anchor point="CENTER" x="-120" y="0" />
+                                    </Anchors>
+                                  </FontString>
+                                </Layer>
+                              </Layers>
+                              <Scripts>
+                                <OnShow>self:SetText(DKP_Options["whisper_command"])</OnShow>
+                                <OnTextChanged>DKP_Options["whisper_command"] = self:GetText()</OnTextChanged>
+                              </Scripts>
+                            </EditBox>
+
+                            <EditBox name="$parentAutoInvite" autoFocus="false" inherits="InputBoxTemplate">
+                              <Size x="100" y="30" />
+                              <Anchors>
+                                <Anchor point="TOPLEFT" x="150" y="-30" />
+                              </Anchors>
+                              <Layers>
+                                <Layer level="OVERLAY">
+                                  <FontString text="自动邀请密语:" inherits="GameFontNormal"  justifyH="LEFT">
+                                    <Anchors>
+                                      <Anchor point="CENTER" x="-120" y="0" />
+                                    </Anchors>
+                                  </FontString>
+                                </Layer>
+                              </Layers>
+                              <Scripts>
+                                <OnShow>self:SetText(DKP_Options["auto_invite_command"])</OnShow>
+                                <OnTextChanged>DKP_Options["auto_invite_command"] = self:GetText()</OnTextChanged>
+                              </Scripts>
+                            </EditBox>
+
+                            <CheckButton name="$parentAutoPublish" inherits="UICheckButtonTemplate" >
+                              <Anchors>
+                                <Anchor point="TOPLEFT" x="30" y="-60" />
+                              </Anchors>
+                              <Scripts>
+                                <OnLoad>
+                                  _G[self:GetName() .. "Text"]:SetText("摸尸体后自动发布装备掉落")
+                                </OnLoad>
+                                <OnShow>self:SetChecked(DKP_Options["auto_publish_loots"])</OnShow>
+                                <OnClick>DKP_Options["auto_publish_loots"] = self:GetChecked()</OnClick>
+                              </Scripts>
+                            </CheckButton>
+
+
+                            <CheckButton name="$parentOpenAuction" inherits="UICheckButtonTemplate" >
+                              <Anchors>
+                                <Anchor point="TOPLEFT" x="30" y="-90" />
+                              </Anchors>
+                              <Scripts>
+                                <OnLoad>
+                                  _G[self:GetName() .. "Text"]:SetText("摸尸体后自动打开拍卖窗口")
+                                </OnLoad>
+                                <OnShow>self:SetChecked(DKP_Options["auto_open_auction"])</OnShow>
+                                <OnClick>DKP_Options["auto_open_auction"] = self:GetChecked()</OnClick>
+                              </Scripts>
+                            </CheckButton>
+
+                            <EditBox name="$parentIgnoreiLv" numeric="true" letters="3" autoFocus="false" inherits="InputBoxTemplate">
+                              <Size x="100" y="30" />
+                              <Anchors>
+                                <Anchor point="TOPLEFT" x="150" y="-120" />
+                              </Anchors>
+                              <Layers>
+                                <Layer level="OVERLAY">
+                                  <FontString text="忽略装等低于" inherits="GameFontNormal" justifyH="LEFT" >
+                                    <Anchors>
+                                      <Anchor point="CENTER" x="-120" y="0" />
+                                    </Anchors>
+                                  </FontString>
+                                  <FontString text="的物品" inherits="GameFontNormal" justifyH="LEFT" >
+                                    <Anchors>
+                                      <Anchor point="CENTER" x="80" y="0" />
+                                    </Anchors>
+                                  </FontString>
+                                </Layer>
+                              </Layers>
+                              <Scripts>
+                                <OnShow>self:SetNumber(DKP_Options["item_level"])</OnShow>
+                                <OnTextChanged>DKP_Options["item_level"] = self:GetNumber()</OnTextChanged>
+                              </Scripts>
+                            </EditBox>
+
+                            <EditBox name="$parentTimeLimit" numeric="true" letters="3" autoFocus="false" inherits="InputBoxTemplate">
+                              <Size x="100" y="30" />
+                              <Anchors>
+                                <Anchor point="TOPLEFT" x="150" y="-150" />
+                              </Anchors>
+                              <Layers>
+                                <Layer level="OVERLAY">
+                                  <FontString text="无人出分后" inherits="GameFontNormal" justifyH="LEFT" >
+                                    <Anchors>
+                                      <Anchor point="CENTER" x="-120" y="0" />
+                                    </Anchors>
+                                  </FontString>
+                                  <FontString text="秒开始倒数" inherits="GameFontNormal" justifyH="LEFT" >
+                                    <Anchors>
+                                      <Anchor point="CENTER" x="80" y="0" />
+                                    </Anchors>
+                                  </FontString>
+                                </Layer>
+                              </Layers>
+                              <Scripts>
+                                <OnShow>self:SetNumber(DKP_Options["item_auction_countdown_after_slience"])</OnShow>
+                                <OnTextChanged>DKP_Options["item_auction_countdown_after_slience"] = self:GetNumber()</OnTextChanged>
+                              </Scripts>
+                            </EditBox>
+                            
+                          </Frames>
+                        </Frame>
+                        
+                      </ScrollChild>
+                    </ScrollFrame>
+                  </Frames>
                 </Frame>
 
 

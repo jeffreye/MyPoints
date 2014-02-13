@@ -22,34 +22,37 @@ if MyPointsFrame then
 end
 
 local lang_convert = {
-    ["HUNTER"] = "猎人",
-    ["WARRIOR"] = "战士",
-    ["SHAMAN"] = "萨满",
-    ["MONK"] = "武僧",
-    ["ROGUE"] = "盗贼",
-    ["MAGE"] = "法师",
-    ["DRUID"] = "小德",
-    ["DEATHKNIGHT"] = "死骑",
-    ["PALADIN"] = "圣骑",
-    ["PRIEST"] = "牧师",
-    ["WARLOCK"] = "术士"
+    ["HUNTER"]       = "猎人",
+    ["WARRIOR"]      = "战士",
+    ["SHAMAN"]       = "萨满",
+    ["MONK"]         = "武僧",
+    ["ROGUE"]        = "盗贼",
+    ["MAGE"]         = "法师",
+    ["DRUID"]        = "小德",
+    ["DEATHKNIGHT"]  = "死骑",
+    ["PALADIN"]      = "圣骑",
+    ["PRIEST"]       = "牧师",
+    ["WARLOCK"]      = "术士"
 
 }
 local TableColumns = {
-            ["MemberFrame"] = { "名字" , "职业" , "分数" , "系数" },
+            ["MemberFrame"] = { "名字" , "职业" , "DKP" , "系数" },
             ["EventFrame"]  = { "名称" , "时间" , "分数" },
-            ["ItemFrame"]   = { "名称" , "拾取" , "分数"}                                       
+            ["ItemFrame"]   = { "物品" , "拾取" , "花费"}                                       
 }
 
 --total length  = 121 + 64*3 =313
 local ColumnData = {
-            ["名字"] = { width = 121, text = "名字", stringJustify="LEFT" },
-            ["名称"] = { width = 149, text = "名称", stringJustify="LEFT" },
-            ["拾取"] = { width = 100, text = "拾取", stringJustify="CENTER" },
-            ["职业"] = { width = 64, text = "职业", stringJustify="CENTER" },
-            ["分数"] = { width = 64, text = "分数", stringJustify="CENTER" },
-            ["系数"] = { width = 64, text = "系数", stringJustify="CENTER" },
-            ["时间"] = { width = 100, text = "时间", stringJustify="CENTER" },
+            ["名字"] = { width = 121, text = "名字", stringJustify="LEFT"   ,sort = function() table.sort( CurrentRecord.members, function(a, b) return b.name < a.name end ) end},
+            ["物品"] = { width = 149, text = "物品", stringJustify="LEFT"   ,sort = function() table.sort( CurrentRecord.loots, function(a, b) return b.name < a.name end  ) end},
+            ["名称"] = { width = 149, text = "名称", stringJustify="LEFT"   ,sort = function() table.sort( CurrentRecord.events, function(a, b) return b.name < a.name end  ) end},
+            ["拾取"] = { width = 100, text = "拾取", stringJustify="CENTER" ,sort = function() table.sort( CurrentRecord.loots, function(a, b) return CurrentRecord.members[b.player].name < CurrentRecord.members[a.player].name end  ) end},
+            ["职业"] = { width = 64, text = "职业", stringJustify="CENTER"  ,sort = function() table.sort( CurrentRecord.members, function(a, b) return b.class < a.class end  ) end},
+            ["DKP"] = { width = 64, text = "DKP", stringJustify="CENTER"  ,sort = function() table.sort( CurrentRecord.members, function(a, b) return CurrentRecord:Lookup(b.name) < CurrentRecord:Lookup(a.name) end ) end},
+            ["分数"] = { width = 64, text = "分数", stringJustify="CENTER"  ,sort = function() table.sort( CurrentRecord.events, function(a, b) return b.point < a.point  end ) end},
+            ["花费"] = { width = 64, text = "花费", stringJustify="CENTER"  ,sort = function() table.sort( CurrentRecord.loots, function(a, b) return b.point < a.point end ) end},
+            ["系数"] = { width = 64, text = "系数", stringJustify="CENTER"  ,sort = function() table.sort( CurrentRecord.members, function(a, b) return CurrentRecord:GetDetails(b.name).factor < CurrentRecord:GetDetails(a.name).factor end ) end},
+            ["时间"] = { width = 100, text = "时间", stringJustify="CENTER" ,sort = function() table.sort( CurrentRecord.events, function(a, b) return b.ctime[1] < a.ctime[1] end  ) end},
 }
 
 CurrentView = "MemberFrame"
@@ -217,6 +220,7 @@ function ScrollFrameInit( view )
             data["stringOffset"] = stringOffset
             table.insert(stringsInfo, data)
             stringOffset = stringOffset + data.width - 2
+            button.sort = data.sort
         else
             button:Hide()
         end
@@ -294,11 +298,8 @@ function ScrollFrameUpdate( scrollFrame )
 end
 
 function SortByColumn( self )
-    print("click" .. self:GetName())
-end
-
-function RaidRosterButton_OnClick( self )
-    print("click" .. self:GetName())
+    self.sort()
+    _G[CurrentView].Container.update()
 end
 
 function GetRosterInfo( index )
@@ -328,8 +329,24 @@ function GetMembers()
     return members
 end
 
+function GetAllClasses()
+    return {
+            { name =   "猎人",  checked = false },
+            { name =   "战士",  checked = false },
+            { name =   "萨满",  checked = false },
+            { name =   "武僧",  checked = false },
+            { name =   "盗贼",  checked = false },
+            { name =   "法师",  checked = false },
+            { name =   "小德",  checked = false },
+            { name =   "死骑",  checked = false },
+            { name =   "圣骑",  checked = false },
+            { name =   "牧师",  checked = false },
+            { name =   "术士",  checked = false }
+            }
+end
+
 function NewEvent(self,modifyData)
-    if CurrentView == "MemberFrame" then
+    if CurrentView == "MemberFrame" and IsModify then
         self:SetText("暂不支持")
         return
     elseif CurrentRecord.name == "选择" then
@@ -342,8 +359,13 @@ function NewEvent(self,modifyData)
 
 
     NewFrame.name:SetText("")
-    NewFrame.point:SetNumber(0)
-    scrollFrame.data = GetMembers()
+    if CurrentView == "MemberFrame" then
+        NewFrame.point:Hide()
+    else
+        NewFrame.point:Show()
+        NewFrame.point:SetNumber(0)
+    end
+    scrollFrame.data = CurrentView ~= "MemberFrame" and GetMembers() or GetAllClasses()
 
     if IsModify then
         NewFrame.id = modifyData.id
@@ -358,6 +380,17 @@ function NewEvent(self,modifyData)
         end
     end
 
+    if CurrentView == "EventFrame" then
+        NewFrame.selectall:Show()
+        NewFrame.selectraid:Show()
+        NewFrame.selectonline:Show()
+        NewFrame.selectinverse:Show()
+    else
+        NewFrame.selectall:Hide()
+        NewFrame.selectraid:Hide()
+        NewFrame.selectonline:Hide()
+        NewFrame.selectinverse:Hide()
+    end
 
     HybridScrollFrame_CreateButtons(scrollFrame, "NewEventButtonTemplate", 0, 0, "TOPLEFT", "TOPLEFT", 0, -SCROLLFRAME_BUTTON_OFFSET, "TOP", "BOTTOM")
     
@@ -376,8 +409,13 @@ function NewEvent(self,modifyData)
                 btn.data = entity
                 btn.checkButton:SetChecked(entity.checked)
                 btn.string1:SetText(entity.name) 
-                btn.string2:SetText(entity.dkp) -- dkp
-                btn.string3:SetText(UnitIsConnected(entity.name) and "在线" or "离线") -- online / offline
+                if CurrentView ~= "MemberFrame" then
+                    btn.string2:SetText(entity.dkp) -- dkp
+                    btn.string3:SetText(UnitIsConnected(entity.name) and "在线" or "离线") -- online / offline
+                else
+                    btn.string2:SetText("")
+                    btn.string3:SetText("")
+                end
                 btn:Show()
             end
         end
@@ -417,14 +455,23 @@ function NewEvent_Submit(  )
     local point = NewFrame.point:GetNumber()
     local data = NewFrame.Container.data
 
-    --convert data to player's id
+    --convert data to useful info
     local players = {}
-    for i=1,#data do
-        if data[i].checked then
-            table.insert(players,data[i].id)
+    local selectedClass  = nil
+    if CurrentView ~= "MemberFrame" then
+        for i=1,#data do
+            if data[i].checked then
+                table.insert(players,data[i].id)
+            end
+        end
+    else
+        for i=1,#data do
+            if data[i].checked then
+                selectedClass = data[i].name
+                break
+            end
         end
     end
-
 
 
     if IsModify then
@@ -441,12 +488,14 @@ function NewEvent_Submit(  )
             modifyData.point = point
             modifyData.player = players[1]        
         end
-        CurrentRecord:RaiseDataChangedEvent(modifyData,modifyData.type,CHANGE_TYPE_MODIFY)
+        CurrentRecord:Modify(modifyData)
     else
         if CurrentView == "EventFrame" then
             CurrentRecord:AddEvent(name,players,point)
         elseif CurrentView == "ItemFrame" then
             CurrentRecord:Loot(name,players[1],point)
+        elseif CurrentView == "MemberFrame" then
+            CurrentRecord:AddMember(name,selectedClass)
         end
     end
     BackToCurrentView()

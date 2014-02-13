@@ -26,8 +26,9 @@ function AuctionFrame_OnLoad( self )
         if delta >= DKP_Options["item_auction_countdown_after_slience"] then
             if countdown == 0 then
                 SendChatMessage(robot_flag .. "禁止出分","OFFICER")
-                countdown = countdown - 1
                 FinishAuction()
+                --reset all
+                countdown = -1
                 return
             elseif countdown ~= -1 then
                 SendChatMessage(robot_flag ..tostring(countdown),"OFFICER")
@@ -138,13 +139,13 @@ function VerifyBid(frame , event , message , sender )
     end
 
     local bid = 0
-
+    message = string.upper(message)
     if string.match(message,"%d") then
         bid = tonumber(message)
     elseif message == "SH" then
         SendChatMessage(robot_flag .. sender .."出" .. tostring(CurrentRecord:Lookup(sender)) .. "分","OFFICER")
         bid = CurrentRecord:Lookup(sender)
-    elseif message == "P" then
+    elseif message == "P" or message == "PASS" then
         return
     else 
         SendChatMessage(robot_flag.."你真的是在出分吗?别闹~","OFFICER")

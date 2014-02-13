@@ -55,7 +55,6 @@ EventList = {
 }
 
 function OnEvent(  frame , event , arg1 , arg2 ,arg3 , arg4 ,arg5 ,arg6,arg7,arg8,arg9,arg10,arg11 , arg12 ,arg13 , arg14 ,arg15 ,arg16,arg17,arg18)	
-	print(event)
 	if EventList[event] then
 		for _,e in pairs(EventList[event]) do
 				e( frame , event , arg1 , arg2 ,arg3 , arg4 ,arg5 ,arg6,arg7,arg8,arg9,arg10,arg11 , arg12 ,arg13 , arg14 ,arg15 ,arg16,arg17,arg18)	
@@ -99,7 +98,7 @@ function MessageFiliter( self, event, msg, author, ... )
 			return true
 		end
 	end
-	return false
+	return StartsWith(msg, DKP_Options["whisper_command"]) and author == UnitName("player")
 end
 
 function SendWhisper( msg , target )
@@ -149,7 +148,8 @@ function ProcessDKPWhisper( frame , event , msg , sender )
 	if msg:upper()==DKP_Options["whisper_command"]:upper() then
 			SendDetails(sender)
 	elseif StartsWith(msg:upper(),DKP_Options["whisper_command"]:upper()) then
-		local class = string.sub(msg:upper(),string.len(DKP_Options["whisper_command"])+1,string.len(msg))
+		local arg = string.gsub(msg:upper(), "%s+", "")
+		local class = string.sub( arg,string.len(DKP_Options["whisper_command"])+1,string.len(arg))
 		local players = CurrentRecord:GetPlayersByClass(convert_table[class])
 		for i=1,#players do
 			local name = players[i]
@@ -160,11 +160,13 @@ end
 
 function OnLootingItems()
 	-- publish the items
+	local looted = false
 	for slot=1,GetNumLootItems() do
 		if GetLootSlotType(slot) == LOOT_SLOT_ITEM  then
 			local link = GetLootSlotLink(slot)
 			local _, _, quality, iLevel  = GetItemInfo(link)
 			if quality >= DKP_Options["item_quality"] and iLevel >= DKP_Options["item_level"] then
+				looted = true
 				table.insert(CurrentRecord:GetLootItems(),link)
 				if DKP_Options["auto_publish_loots"] then
 					SendChatMessage(link,"RAID")
@@ -175,7 +177,7 @@ function OnLootingItems()
 
 	if AuctionFrame:IsShown() then
 		AuctionFrame_UpdateList()
-	else
+	elseif DKP_Options["auto_open_auction"] or looted then
 		AuctionFrame:Show()
 	end
 	-- and popup the auction frame
@@ -251,7 +253,6 @@ end
 function Save( )
 	local new = {}
 	MiDKP3_Config = DeepCopy(MiDKP3_Config,new)
-	print("remember to save options")
 end
 
 function GetFactor( dkp )
@@ -334,6 +335,7 @@ function initialize()
 		["auto_announce"] = "开组啦开组啦,密我1进组",
 		["auto_announce_interval"] = 180,
 		["auto_publish_loots"] = true,
+		["auto_open_auction"] = true,
 		["dkp_factors"] ={
 			{
 				["gt"] = -1000,

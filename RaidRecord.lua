@@ -111,7 +111,11 @@ function RaidRecord:Read( dkpData )
 		for i,v in pairs(e.players) do
 			v = FindOrAdd(indexedPlayers,v)
 			e["players"][i] = v
-			record.gain[v] = record.gain[v] + e.point
+			if e.point >= 0 then
+				record.gain[v] = record.gain[v] + e.point
+			else
+				record.cost[p] = record.cost[p] - e.point
+			end
 		end
 	end
 
@@ -202,7 +206,12 @@ end
 function RaidRecord:AddEvent( eventName , playerList , eventPoint )
 	--update members' gain point
 	for k,v in pairs(playerList) do
-		self.gain[v] = self.gain[v] + eventPoint
+		if eventPoint >= 0 then
+			self.gain[v] = self.gain[v] + eventPoint
+		else
+			self.cost[p] = self.cost[p] - eventPoint
+		end
+
 		playerList[k] = self:GetMemberId(v)
 	end
 
@@ -244,9 +253,10 @@ end
 
 function RaidRecord:GetPlayersByClass( class )
 	local result = {}
+	class = string.upper(class)
 	for n,v in pairs(self.members) do
-		if v.class == class then
-			result[#result] = n
+		if string.upper(v.class) == class then
+			table.insert(result,v.name)
 		end
 	end
 	return result
@@ -282,10 +292,12 @@ end
 function RaidRecord:Lookup( memberName )
 	local prev = self:GetPrevDKP(memberName)
 	local details = self:GetDetails(memberName)
-	if not details then
-		return 0
+	for n,v in pairs(self.members) do
+		if v.name == name then
+			return prev - self.cost[v.id]
+		end
 	end
-	return prev - self.cost[details.id]
+	return prev
 end
 
 function RaidRecord:GetPrevDKP( memberName )
@@ -340,16 +352,42 @@ function RaidRecord:RemoveByName( index , content_type)
 	self:RaiseDataChangedEvent(data,content_type,CHANGE_TYPE_REMOVE)
 end
 
+function RaidRecord:Modify( modifyData )
+	-- recalculate all points
+	self:RefreshDeltaPoints()
+
+    CurrentRecord:RaiseDataChangedEvent(modifyData,modifyData.type,CHANGE_TYPE_MODIFY)
+end
+
+function RaidRecord:RefreshDeltaPoints()
+	for k,v in pairs(self.members) do
+		self.gain[v.id] = 0
+		self.cost[v.id] = 0
+	end
+
+	-- refresh gain,cost
+	for _,e in pairs(self.events) do
+		if not e.extra then
+			for i,v in pairs(e.players) do
+				if e.point >= 0 then
+					self.gain[v] = self.gain[v] + e.point
+				else
+					self.cost[p] = self.cost[p] - e.point
+				end
+			end
+		end
+	end
+
+	for _,e in pairs(self.loots) do
+		p = e["player"] 
+		self.cost[p] = self.cost[p] + e.point
+	end
+end
+
 function RaidRecord:Finish()
 	self.saveVar.status = 3 -- finish flag
 	self.saveVar.endTime = CurrentTime()
 	self.endtime = self.saveVar.endTime[1]
-
-	--calculate extra points
-	local dict = {}
-	for _,v in pairs(self.members) do
-		dict[v.id] = 0
-	end
 
 	-- remove extra events
 	for i=#self.events,1,-1 do
@@ -363,21 +401,13 @@ function RaidRecord:Finish()
 	    end
 	end
 
-	for k,e in pairs(self.events) do
-		if e.point > 0 then
-			for _,playerId in pairs(e.players) do
-				dict[playerId] = dict[playerId] + e.point 
-			end
-		end
-	end
-
-	for id,acquired in pairs(dict) do
-		local prev = self:GetPrevDKP(self.members[id].name)
+	for _,m in pairs(self.members) do
+		local prev = self:GetPrevDKP(m.name)
 		local factor = GetFactor(prev)
 		local event = {
-			["players"] = { id },
+			["players"] = { m.id },
 			["type"] = TYPE_EVENT,
-			["point"] = acquired*factor,
+			["point"] = self.gain[m.id] * factor,
 			["ctime"] = CurrentTime(),
 			["name"] = "DKP额外增长（上次DKP分值："..prev.." ,系数："..factor.."）",
 			["extra"] = true
