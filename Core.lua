@@ -167,7 +167,7 @@ function OnLootingItems()
 			local _, _, quality, iLevel  = GetItemInfo(link)
 			if quality >= DKP_Options["item_quality"] and iLevel >= DKP_Options["item_level"] then
 				looted = true
-				table.insert(CurrentRecord:GetLootItems(),link)
+				AddLootItem(link)
 				if DKP_Options["auto_publish_loots"] then
 					SendChatMessage(link,"RAID")
 				end
@@ -177,7 +177,7 @@ function OnLootingItems()
 
 	if AuctionFrame:IsShown() then
 		AuctionFrame_UpdateList()
-	elseif DKP_Options["auto_open_auction"] or looted then
+	elseif DKP_Options["auto_open_auction"] and looted then
 		AuctionFrame:Show()
 	end
 	-- and popup the auction frame
@@ -226,7 +226,7 @@ function OnAddonLoaded()
 
     CurrentRecord:RegisterDataChangedEvent(OnRecordChanged)
 
-	if not DKP_Options  then
+	if not DKP_Options or not PendingItems  then
 		initialize()
 	end
 
@@ -270,6 +270,7 @@ end
 
 
 function initialize()
+	PendingItems = {}
 	DKP_Options = {
 		["ignore"] =  {
 			"狮眼石", -- [1]

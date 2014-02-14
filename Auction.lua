@@ -58,7 +58,7 @@ function AuctionFrame_UpdateList()
     local scrollFrame = AuctionFrame.Container
     local offset = HybridScrollFrame_GetOffset(scrollFrame)
     local buttons = scrollFrame.buttons
-    local LootItemList = CurrentRecord:GetLootItems()
+    local LootItemList = GetLootItems()
     local count = #LootItemList
     for i=1,#buttons do
         local btn = buttons[i]
@@ -103,14 +103,14 @@ function FinishAuction( frame )
         str = "没人出分,装备又烂了╮(╯▽╰)╭  "
     else
         str = last_bid.looter .. "获得" .. tostring(last_bid.bid) .. "分"
-        CurrentRecord:Loot(item,last_bid.looter,las.bid)
-        RemoveAuction(frame)
+        CurrentRecord:Loot(item,last_bid.looter,last_bid.bid)
+        RemoveAuction(item)
     end
     SendChatMessage(robot_flag .. item..str,"OFFICER")
 end
 
-function RemoveAuction( frame )
-    CurrentRecord:RemovePendingItem(last_bid.item)
+function RemoveAuction( item )
+    RemovePendingItem(item)
     AuctionFrame.Container.update()
 end
 
@@ -160,5 +160,28 @@ function VerifyBid(frame , event , message , sender )
         last_bid.looter = sender
         last_bid.bid = bid
         last_bid.time = time()
+        countdown = -1
     end
+end
+
+
+
+function RemovePendingItem( item )
+    for i=1,#PendingItems do
+        if PendingItems[i] == item then
+            table.remove(PendingItems,i)
+            break
+        end
+    end
+end
+
+function GetLootItems()
+    return PendingItems
+end
+
+
+
+function AddLootItem( item)
+    table.insert(PendingItems,item)
+    return PendingItems
 end

@@ -84,7 +84,7 @@
           <Anchor relativeTo="$parentStart" relativePoint="RIGHT" point="LEFT" x="0" y="0" />
         </Anchors>
         <Scripts>
-          <OnClick function="RemoveAuction" />
+          <OnClick>RemoveAuction(self:GetParent().itemLink)</OnClick>
         </Scripts>
       </Button>
     </Frames>

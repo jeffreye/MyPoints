@@ -5,7 +5,7 @@
 ## Version: 0.1 alpha
 ## Author: Jeffreye
 ## Dependencies: MiDKP
-## SavedVariables: DKP_Options
+## SavedVariables: DKP_Options , PendingItems
 
 MyPoints.xml
 Utils.lua

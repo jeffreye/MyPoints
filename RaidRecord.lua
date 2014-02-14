@@ -78,10 +78,6 @@ function RaidRecord:Read( dkpData )
 		obj.endtime = nil
 	end
 
-	if not dkpData.PendingItems then
-		dkpData.PendingItems = {}
-	end
-
 	self.__index=self
 	local record=setmetatable(obj,self)
 
@@ -143,8 +139,7 @@ function RaidRecord:new( record_name , dkp_name )
 			["active"] = false,
 			["status"] = 1,
 			["zones"] = {},
-			["entities"] = {},
-			PendingItems = {}
+			["entities"] = {}
 		} 
 
 	MiDKP3_Config["raids"][saveVar.id] = saveVar -- update the var on account's profile
@@ -305,7 +300,7 @@ function RaidRecord:GetPrevDKP( memberName )
 		return 0
 	end
 
-	local m = nil
+	local m = { }
 	for k,v in pairs(MiDKPData["dkp"]) do
 		if v.name == self.saveVar.dkp then
 			m = v.members
@@ -420,18 +415,4 @@ function RaidRecord:Finish()
 
 	-- export to xml
 	MiDKP.OO.Raid:Load(self.saveVar.id):SaveAll()
-end
-
-function RaidRecord:RemovePendingItem( item )
-	local LootItemList = self.saveVar.PendingItems
-    for i=1,#LootItemList do
-        if LootItemList[i] == item then
-            table.remove(LootItemList,i)
-            break
-        end
-    end
-end
-
-function RaidRecord:GetLootItems()
-	return self.saveVar.PendingItems
 end
