@@ -35,7 +35,12 @@ function AuctionFrame_OnLoad( self )
                 countdown = countdown - 1
                 return
             else
-                SendChatMessage(robot_flag .. "无人出分,开始倒数","OFFICER")
+
+                if last_bid.bid ~= 0 then
+                    SendChatMessage(robot_flag .. "目前最高出分是"..last_bid.looter .. tostring(last_bid.bid),"OFFICER")
+                end
+
+                SendChatMessage(robot_flag .. "开始倒数","OFFICER")
                 countdown = 5
             end
         else 
@@ -102,8 +107,9 @@ function FinishAuction( frame )
     if last_bid.bid == 0 then
         str = "没人出分,装备又烂了╮(╯▽╰)╭  "
     else
-        str = last_bid.looter .. "获得" .. tostring(last_bid.bid) .. "分"
-        CurrentRecord:Loot(item,last_bid.looter,last_bid.bid)
+        str = last_bid.looter .. "获得(" .. tostring(last_bid.bid) .. "分)"
+        local id = CurrentRecord:GetMemberId(last_bid.looter)
+        CurrentRecord:Loot(item,id,last_bid.bid)
         RemoveAuction(item)
     end
     SendChatMessage(robot_flag .. item..str,"OFFICER")
@@ -137,6 +143,12 @@ function VerifyBid(frame , event , message , sender )
     if not Auctioning or StartsWith(message,robot_flag) then
         return
     end
+
+    if not CurrentRecord:HasMember(sender) then
+        SendChatMessage(robot_flag.."哼,不来活动就想拿东西?","OFFICER")
+        return
+    end
+
 
     local bid = 0
     message = string.upper(message)

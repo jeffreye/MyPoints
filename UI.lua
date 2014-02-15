@@ -471,6 +471,9 @@ function NewEvent_Submit(  )
                 break
             end
         end
+        if not selectedClass then
+            return
+        end
     end
 
 

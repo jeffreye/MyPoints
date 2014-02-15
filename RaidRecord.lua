@@ -26,8 +26,10 @@ function DefaultRaidRecord()
 
 	-- create a default record that contains all members
 	local record = RaidRecord:Default()	
-	for name,v in pairs(MiDKPData["dkp"][1]["members"]) do
-		record:AddMember(name,v["class"])
+	if MiDKPData and MiDKPData["dkp"] and MiDKPData ["dkp"][1] then
+		for name,v in pairs(MiDKPData["dkp"][1]["members"]) do
+			record:AddMember(name,v["class"])
+		end
 	end
 	return record
 end
@@ -159,8 +161,15 @@ function RaidRecord:IsClose()
 end
 
 --the id in saveVar (Backward compatibility)
-function RaidRecord:GetMemberId( index )
-	return self.idTable[index] or index
+function RaidRecord:GetMemberId( memberName )
+	-- return self.idTable[index] or index
+
+	for n,v in pairs(self.members) do
+		if v.name == memberName then
+			return v.id
+		end
+	end
+	return nil
 end
 
 -- only support add/remove event
@@ -206,8 +215,6 @@ function RaidRecord:AddEvent( eventName , playerList , eventPoint )
 		else
 			self.cost[p] = self.cost[p] - eventPoint
 		end
-
-		playerList[k] = self:GetMemberId(v)
 	end
 
 	local event = {
@@ -227,12 +234,11 @@ function RaidRecord:AddEvent( eventName , playerList , eventPoint )
 end
 
 function RaidRecord:Loot( itemName , looter ,eventPoint)
-	local player = self:GetMemberId(looter)
 	local item =  {
 		["type"] = TYPE_ITEM,
 		["point"] = eventPoint,
 		["ctime"] = CurrentTime(),
-		["player"] = player,
+		["player"] = looter,
 		["name"] = itemName,
 	}
 	table.insert(self.loots,item)
@@ -241,7 +247,7 @@ function RaidRecord:Loot( itemName , looter ,eventPoint)
 	item.entityId = #self.saveVar["entities"]
 
 	--update members' cost point
-	self.cost[player] = self.cost[player] + eventPoint
+	self.cost[looter] = self.cost[looter] + eventPoint
 	self:RaiseDataChangedEvent(item,TYPE_ITEM,CHANGE_TYPE_ADD)
 	return item
 end
@@ -283,14 +289,22 @@ function RaidRecord:GetDetails( name )
 	return nil
 end
 
+function RaidRecord:HasMember( memberName )
+	for n,v in pairs(self.members) do
+		if v.name == memberName then
+			return true
+		end
+	end
+	return false
+end
+
 --- get avaliable dkp
 function RaidRecord:Lookup( memberName )
 	local prev = self:GetPrevDKP(memberName)
 	local details = self:GetDetails(memberName)
-	for n,v in pairs(self.members) do
-		if v.name == name then
-			return prev - self.cost[v.id]
-		end
+	local  id = self:GetMemberId(memberName)
+	if id then
+		return prev - self.cost[id]
 	end
 	return prev
 end
