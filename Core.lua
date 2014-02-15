@@ -159,6 +159,10 @@ function ProcessDKPWhisper( frame , event , msg , sender )
 end
 
 function OnLootingItems()
+	if CurrentRecord:IsClose() then
+		return
+	end
+
 	-- publish the items
 	local looted = false
 	for slot=1,GetNumLootItems() do
@@ -184,6 +188,10 @@ function OnLootingItems()
 end
 
 function OnRosterUpdate()
+	
+	if CurrentRecord:IsClose() then
+		return
+	end
 	-- welcome new member!
 	-- or someone get online
 	-- or...leave one

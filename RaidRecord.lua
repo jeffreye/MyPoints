@@ -44,7 +44,7 @@ end
 function RaidRecord:Default()
 	local record_name = ""
 	local dkp_name = MiDKPData["dkp"][1]["name"]
-	local obj={ name=record_name ,createtime = CurrentTime()[1] ,endtime = nil , members={} , events={} , loots={} , gain = {} , cost ={},
+	local obj={ name=record_name ,createtime = CurrentTime()[1] ,endtime = CurrentTime()[1] , members={} , events={} , loots={} , gain = {} , cost ={},
 	 saveVar = {
 			["name"] = record_name,
 			["dkp"] = dkp_name,
@@ -155,7 +155,7 @@ function RaidRecord:IsDefault()
 end
 
 function RaidRecord:IsClose()
-	return self.endtime
+	return self.endtime or self:IsDefault()
 end
 
 --the id in saveVar (Backward compatibility)
