@@ -47,3 +47,13 @@ function tablelength(T)
   for _ in pairs(T) do count = count + 1 end
   return count
 end
+
+function GetUnitNameWithoutServer( name )
+    local s = strfind(name,"-")
+    if not s then 
+        return name
+    end
+
+    local unit = strsub(name,1,s-1)
+    return unit
+end

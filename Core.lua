@@ -98,7 +98,7 @@ function MessageFiliter( self, event, msg, author, ... )
 			return true
 		end
 	end
-	return StartsWith(msg, DKP_Options["whisper_command"]) and author == UnitName("player")
+	return StartsWith(msg, DKP_Options["whisper_command"]) and GetUnitNameWithoutServer(author) == UnitName("player")
 end
 
 function SendWhisper( msg , target )
@@ -108,8 +108,6 @@ end
 
 function SendDetails( name )
 	local NewLine = "\n"
-	if not CurrentRecord then 
-	end
 
 	local player = CurrentRecord:GetDetails(name) --- wrong way!
 	if not player then
@@ -118,6 +116,7 @@ function SendDetails( name )
 		SendWhisper("当前系数为" .. GetFactor(dkp),name)
 		return
 	end
+
 	SendWhisper("您当前可用的DKP:" .. CurrentRecord:Lookup(name) .. "分",name)
 	SendWhisper("进团分数:" .. player.previous .."分，" .. "当前系数为:" .. player.factor,name)
 	SendWhisper("本次活动总共获得" .. player.gain .. "分",name)

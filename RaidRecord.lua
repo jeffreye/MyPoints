@@ -164,6 +164,7 @@ end
 function RaidRecord:GetMemberId( memberName )
 	-- return self.idTable[index] or index
 
+	memberName = GetUnitNameWithoutServer(memberName)
 	for n,v in pairs(self.members) do
 		if v.name == memberName then
 			return v.id
@@ -188,6 +189,7 @@ function RaidRecord:UnregisterDataChangedEvent(  )
 end
 
 function RaidRecord:AddMember( memberName , className )
+	memberName = GetUnitNameWithoutServer(memberName)
 	local member = {
 		["starttime"] = CurrentTime(),
 		["type"] = TYPE_PLAYER,
@@ -264,6 +266,7 @@ function RaidRecord:GetPlayersByClass( class )
 end
 
 function RaidRecord:GetDetails( name )
+	name = GetUnitNameWithoutServer(name)
 	for n,v in pairs(self.members) do
 		if v.name == name then
 			local player = shallowcopy(v)
@@ -290,6 +293,7 @@ function RaidRecord:GetDetails( name )
 end
 
 function RaidRecord:HasMember( memberName )
+	memberName = GetUnitNameWithoutServer(memberName)
 	for n,v in pairs(self.members) do
 		if v.name == memberName then
 			return true
@@ -300,6 +304,7 @@ end
 
 --- get avaliable dkp
 function RaidRecord:Lookup( memberName )
+	memberName = GetUnitNameWithoutServer(memberName)
 	local prev = self:GetPrevDKP(memberName)
 	local details = self:GetDetails(memberName)
 	local  id = self:GetMemberId(memberName)
@@ -310,6 +315,7 @@ function RaidRecord:Lookup( memberName )
 end
 
 function RaidRecord:GetPrevDKP( memberName )
+	memberName = GetUnitNameWithoutServer(memberName)
 	if not MiDKPData then
 		return 0
 	end
